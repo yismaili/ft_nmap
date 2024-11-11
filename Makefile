@@ -1,24 +1,17 @@
-# Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -I./includes
 LDFLAGS = -lpcap -lpthread
 
-# Directories
 SRC_DIR = src
 OBJ_DIR = obj
 
-# Source files
 SRCS = $(wildcard $(SRC_DIR)/core/*.c) \
-       $(wildcard $(SRC_DIR)/network/*.c) \
-       $(wildcard $(SRC_DIR)/utils/*.c)
+       $(wildcard $(SRC_DIR)/network/*.c)
 
-# Object files
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-# Target executable
 NAME = ft_nmap
 
-# Rules
 all: $(NAME)
 
 $(NAME): $(OBJS)
