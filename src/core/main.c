@@ -1,14 +1,11 @@
 #include "../../includes/scanner.h"
-
-static t_context g_context;
-
 int parse_arguments(int argc, char **argv, t_config *config) {
     int i = 1;
 
     if (argc < 2) 
         return -1;
     // init defaults
-    config->start_port = 1;
+    config->start_port = 22;
     config->end_port = 9999;
     config->thread_count = 1;
     config->scan_types = SCAN_SYN;
@@ -41,6 +38,8 @@ int parse_arguments(int argc, char **argv, t_config *config) {
 int main(int argc, char **argv) {
    // init config
     t_config config;
+    t_context g_context;
+    
     memset(&config, 0, sizeof(config));
     pthread_mutex_init(&config.mutex, NULL);
 
@@ -49,9 +48,9 @@ int main(int argc, char **argv) {
         exit(2);
     }
 
-    printf("  target ip: %s\n", config.target_ip);
-    printf("  thread count: %d\n", config.thread_count);
-    printf("  port range: %d to %d\n", config.start_port, config.end_port);
+    // printf("  target ip: %s\n", config.target_ip);
+    // printf("  thread count: %d\n", config.thread_count);
+    // printf("  port range: %d to %d\n", config.start_port, config.end_port);
 
     //init context
     g_context.config = &config;
@@ -59,6 +58,15 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Failed to initialize scanner\n");
         exit(2);
     }
+
+    // Scan each port in the specified range sequentially
+    for (int port = config.start_port; port <= config.end_port; ++port) {
+        printf("hhhh %d\n", port);
+        scan_port(port, &g_context);
+    }
+
+    // Cleanup
+    close(g_context.raw_socket);
 
     return 0;
 }
