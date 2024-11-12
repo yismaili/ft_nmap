@@ -40,6 +40,10 @@ bool parse_arguments(int argc, char **argv, t_scan_config *config) {
         if (!parse_scan(argv[i + 1], config)) {
           return (false);
         }
+      } else if (strcmp(argv[i], "--ip") == 0) {
+        if (!parse_ips(argv[i + 1], config)) {
+          return (false);
+        }
       }
 
       i += 2;
