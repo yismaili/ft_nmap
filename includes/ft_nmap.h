@@ -29,5 +29,6 @@ bool parse_arguments(int argc, char **argv, t_scan_config *config);
 void print_help_menu(void);
 bool parse_ports(char *ports, t_scan_config *config);
 bool parse_speedup(char *speedup, t_scan_config *config);
+bool parse_scan(char *scan_type, t_scan_config *config);
 
 #endif

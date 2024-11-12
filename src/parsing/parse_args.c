@@ -30,10 +30,14 @@ bool parse_arguments(int argc, char **argv, t_scan_config *config) {
 
       if (strcmp(argv[i], "--ports") == 0) {
         if (!parse_ports(argv[i + 1], config)) {
-          return (false);         
+          return (false);
         };
       } else if (strcmp(argv[i], "--speedup") == 0) {
         if (!parse_speedup(argv[i + 1], config)) {
+          return (false);
+        }
+      } else if (strcmp(argv[i], "--scan") == 0) {
+        if (!parse_scan(argv[i + 1], config)) {
           return (false);
         }
       }
@@ -44,6 +48,25 @@ bool parse_arguments(int argc, char **argv, t_scan_config *config) {
       fprintf(stderr, "Invalid flag: %s\n", argv[i]);
       return (false);
     }
+  }
+
+  if (config->scan_types.syn == false && config->scan_types.null == false &&
+      config->scan_types.fin == false && config->scan_types.xmas == false &&
+      config->scan_types.ack == false && config->scan_types.udp == false) {
+    config->scan_types.syn = true;
+    config->scan_types.null = true;
+    config->scan_types.ack = true;
+    config->scan_types.fin = true;
+    config->scan_types.xmas = true;
+    config->scan_types.udp = true;
+  }
+
+  if (config->ports == NULL) {
+    config->ports = malloc(sizeof(int) * 1024);
+    for (int i = 0; i <= 1024; i++) {
+      config->ports[i] = i + 1;
+    }
+    config->port_count = 1024;
   }
   return (true);
 }
