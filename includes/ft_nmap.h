@@ -27,6 +27,7 @@ typedef struct s_scan_config {
 
 bool parse_arguments(int argc, char **argv, t_scan_config *config);
 void print_help_menu(void);
-void parse_ports(char *ports, t_scan_config *config);
+bool parse_ports(char *ports, t_scan_config *config);
+bool parse_speedup(char *speedup, t_scan_config *config);
 
 #endif

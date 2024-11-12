@@ -2,7 +2,8 @@ NAME = ft_nmap
 
 SRC =	src/main.c \
 		src/parsing/parse_args.c \
-		src/parsing/parse_ports.c
+		src/parsing/parse_ports.c \
+		src/parsing/parse_speedup.c \
 
 FLAGS =  -Wall -Werror -Wextra
 CC = gcc

@@ -1,11 +1,11 @@
 #include "../../includes/ft_nmap.h"
 
-void parse_ports(char *ports, t_scan_config *config) {
+bool parse_ports(char *ports, t_scan_config *config) {
   const char *ptr = ports;
   while (*ptr) {
     if (!isdigit(*ptr) && *ptr != ',' && *ptr != '-') {
       fprintf(stderr, "Invalid character in port specification: '%c'\n", *ptr);
-      return;
+      return (false);
     }
     ptr++;
   }
@@ -16,7 +16,7 @@ void parse_ports(char *ports, t_scan_config *config) {
 
   if (!port_array) {
     fprintf(stderr, "Memory allocation failed\n");
-    return;
+    return (false);
   }
 
   char *token = strtok(ports, ",");
@@ -30,20 +30,20 @@ void parse_ports(char *ports, t_scan_config *config) {
       if (matched != 2) {
         fprintf(stderr, "Invalid port range format: %s\n", token);
         free(port_array);
-        return;
+        return (false);
       }
 
       if (start_port <= 0 || start_port > 1024 || end_port <= 0 ||
           end_port > 1024) {
         fprintf(stderr, "Ports must be between 1 and 1024\n");
         free(port_array);
-        return;
+        return (false);
       }
 
       if (start_port > end_port) {
         fprintf(stderr, "Invalid port range: %d-%d\n", start_port, end_port);
         free(port_array);
-        return;
+        return (false);
       }
 
       for (int i = start_port; i <= end_port; i++) {
@@ -52,7 +52,7 @@ void parse_ports(char *ports, t_scan_config *config) {
           if (port_count >= 1024) {
             fprintf(stderr, "Too many ports specified\n");
             free(port_array);
-            return;
+            return (false);
           }
           port_array[port_count++] = i;
         }
@@ -62,13 +62,13 @@ void parse_ports(char *ports, t_scan_config *config) {
       if (matched != 1) {
         fprintf(stderr, "Invalid port format: %s\n", token);
         free(port_array);
-        return;
+        return (false);
       }
 
       if (start_port <= 0 || start_port > 1024) {
         fprintf(stderr, "Ports must be between 1 and 1024\n");
         free(port_array);
-        return;
+        return (false);
       }
 
       if (!(seen_ports[start_port / 8] & (1 << (start_port % 8)))) {
@@ -76,7 +76,7 @@ void parse_ports(char *ports, t_scan_config *config) {
         if (port_count >= 1024) {
           fprintf(stderr, "Too many ports specified\n");
           free(port_array);
-          return;
+          return (false);
         }
         port_array[port_count++] = start_port;
       }
@@ -87,4 +87,5 @@ void parse_ports(char *ports, t_scan_config *config) {
 
   config->ports = port_array;
   config->port_count = port_count;
+  return (true);
 }

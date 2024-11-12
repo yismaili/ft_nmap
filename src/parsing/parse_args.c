@@ -17,7 +17,7 @@ bool parse_arguments(int argc, char **argv, t_scan_config *config) {
   while (i < argc) {
     if (strcmp(argv[i], "--help") == 0) {
       print_help_menu();
-      i++;     
+      i++;
     } else if (strcmp(argv[i], "--ports") == 0 ||
                strcmp(argv[i], "--ip") == 0 || strcmp(argv[i], "--file") == 0 ||
                strcmp(argv[i], "--speedup") == 0 ||
@@ -29,7 +29,13 @@ bool parse_arguments(int argc, char **argv, t_scan_config *config) {
       }
 
       if (strcmp(argv[i], "--ports") == 0) {
-        parse_ports(argv[i + 1], config);
+        if (!parse_ports(argv[i + 1], config)) {
+          return (false);         
+        };
+      } else if (strcmp(argv[i], "--speedup") == 0) {
+        if (!parse_speedup(argv[i + 1], config)) {
+          return (false);
+        }
       }
 
       i += 2;
