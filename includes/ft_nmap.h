@@ -33,5 +33,8 @@ bool parse_ports(char *ports, t_scan_config *config);
 bool parse_speedup(char *speedup, t_scan_config *config);
 bool parse_scan(char *scan_type, t_scan_config *config);
 bool parse_ips(char *ips, t_scan_config *config);
+bool parse_file(char *filename, t_scan_config *config);
+int is_valid_ipv4(char *str);
+int is_valid_hostname(char *str);
 
 #endif

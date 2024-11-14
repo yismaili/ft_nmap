@@ -6,6 +6,7 @@ SRC =	src/main.c \
 		src/parsing/parse_speedup.c \
 		src/parsing/parse_scan.c \
 		src/parsing/parse_ips.c \
+		src/parsing/parse_file.c
 
 FLAGS =  -Wall -Werror -Wextra
 CC = gcc

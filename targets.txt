@@ -1,0 +1,34 @@
+# Common websites
+google.com
+facebook.com
+amazon.com
+microsoft.com
+
+# Cloud providers
+aws.amazon.com
+cloud.google.com
+azure.microsoft.com
+
+# Popular DNS servers
+8.8.8.8
+8.8.4.4
+1.1.1.1
+9.9.9.9
+
+# Local network examples
+192.168.1.1
+192.168.0.1
+10.0.0.1
+172.16.0.1
+
+# Some subdomains
+mail.google.com
+drive.google.com
+maps.google.com
+docs.google.com
+
+# Some international domains
+bbc.co.uk
+cnn.com
+reuters.com
+nytimes.com
