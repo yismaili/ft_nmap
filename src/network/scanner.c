@@ -41,7 +41,7 @@ static void craft_tcp_packet(char *packet, const t_context *ctx, int port, scan_
     ip_header->ip_id = htons(rand());
     ip_header->ip_ttl = 64;
     ip_header->ip_p = IPPROTO_TCP;
-    inet_pton(AF_INET, ctx->config->target_ip, &ip_header->ip_dst);
+    inet_pton(AF_INET, ctx->config->target_ips[0], &ip_header->ip_dst);
 
     // fill TCP header
     tcp_header->th_sport = htons(12345); 
@@ -86,15 +86,15 @@ void scan_port(int port, t_context *g_context) {
 
     memset(&dest, 0, sizeof(dest));
     dest.sin_family = AF_INET;
-    printf("in scan port %s\n", g_context->config->target_ip);
-    if (inet_pton(AF_INET, g_context->config->target_ip, &dest.sin_addr) <= 0) {
+    printf("in scan port %s\n", g_context->config->target_ips[0]);
+    if (inet_pton(AF_INET, g_context->config->target_ips[0], &dest.sin_addr) <= 0) {
         perror("Invalid IP address");
         return;
     }
     int scan = SCAN_SYN;
 
     while (scan <= SCAN_UDP) {
-        if (g_context->config->scan_types & scan) 
+        if (g_context->config->scan_types.ack & scan) 
         {
             craft_tcp_packet(packet, g_context, port, scan);
             if (sendto(g_context->raw_socket, packet, sizeof(packet), 0,(struct sockaddr *)&dest, sizeof(dest)) < 0) 
@@ -104,7 +104,7 @@ void scan_port(int port, t_context *g_context) {
             {
                 printf("Port %d scan type %d: status %d\n", port, scan, result.status);
             }
-            sleep(g_context->config->timeout);
+            sleep(2);
         }
         scan <<= 1;
     }

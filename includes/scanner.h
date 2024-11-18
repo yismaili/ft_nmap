@@ -10,7 +10,8 @@
 #include <stdlib.h>   
 #include <pthread.h>
 #include <unistd.h>
-#include <pcap.h> 
+#include <pcap.h>
+#include "../includes/ft_nmap.h"
 
 #define CAPTURE_TIMEOUT 1000
 #define MAX_THREADS 250
@@ -27,22 +28,22 @@ typedef enum {
 } scan_type_t;
 
 //define configuration structure
-typedef struct {
-    char target_ip[16];
-    int start_port;
-    int end_port;
-    int thread_count;
-    unsigned int scan_types;
-    double timeout;
-    pthread_mutex_t mutex;
-} t_config;
+// typedef struct {
+//     char target_ip[16];
+//     int start_port;
+//     int end_port;
+//     int thread_count;
+//     unsigned int scan_types;
+//     double timeout;
+//     pthread_mutex_t mutex;
+// } t_config;
 
 //define scanner context
 typedef struct {
     pcap_t *handle;
     int raw_socket;
     pthread_mutex_t *mutex;
-    t_config *config;
+    t_scan_config *config;
 } t_context;
 
 typedef struct {
