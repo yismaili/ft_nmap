@@ -45,16 +45,13 @@ int main(int argc, char **argv) {
     t_context g_context;
     
     memset(&config, 0, sizeof(config));
-    // pthread_mutex_init(&config.mutex, NULL);
 
     if (!parse_arguments(argc, argv, &config)) {
         printf("Usage: %s --ip <target_ip> [--ports <start-end>] [--speedup <threads>]\n", argv[0]);
         exit(2);
     }
 
-    // printf("  target ip: %s\n", config.target_ip);
-    // printf("  thread count: %d\n", config.thread_count);
-    // printf("  port range: %d to %d\n", config.start_port, config.end_port);
+  //  debug_config(config)
 
     //init context
     g_context.config = &config;
@@ -62,19 +59,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Failed to initialize scanner\n");
         exit(2);
     }
-
-    // Scan each port in the specified range sequentially
-    int i = 0;
-    while (i < config.port_count)
-    {
-        scan_port(config.ports[i], &g_context);
-        i++;
-    }
-    
-
-
-
-    // Cleanup
+    scan_port( &g_context);
     close(g_context.raw_socket);
 
     return 0;

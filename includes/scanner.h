@@ -17,38 +17,15 @@
 #define MAX_THREADS 250
 #define DEFAULT_TIMEOUT 2
 
-//define scan types
-typedef enum {
-    SCAN_SYN = 1,
-    SCAN_NULL = 2,
-    SCAN_ACK = 4,
-    SCAN_FIN = 8,
-    SCAN_XMAS = 16,
-    SCAN_UDP = 32
-} scan_type_t;
-
-//define configuration structure
-// typedef struct {
-//     char target_ip[16];
-//     int start_port;
-//     int end_port;
-//     int thread_count;
-//     unsigned int scan_types;
-//     double timeout;
-//     pthread_mutex_t mutex;
-// } t_config;
-
 //define scanner context
 typedef struct {
     pcap_t *handle;
     int raw_socket;
-    pthread_mutex_t *mutex;
     t_scan_config *config;
 } t_context;
 
 typedef struct {
     int port;
-    scan_type_t scan_type;
     enum {
         PORT_UNKNOWN,
         PORT_OPEN,
@@ -59,8 +36,7 @@ typedef struct {
     } status;
 } t_scan_result;
 
-
 int initialize_scanner(t_context *ctx);
-void scan_port(int port, t_context *g_context);
+void scan_port(t_context *g_context);
 
 #endif
