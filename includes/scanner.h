@@ -17,50 +17,33 @@
 #define MAX_THREADS 250
 #define DEFAULT_TIMEOUT 2
 
-//define scan types
-typedef enum {
-    SCAN_SYN = 1,
-    SCAN_NULL = 2,
-    SCAN_ACK = 4,
-    SCAN_FIN = 8,
-    SCAN_XMAS = 16,
-    SCAN_UDP = 32
-} scan_type_t;
+typedef struct {
+    char service_name[1024];
+    int port;
+    bool is_open;
+    int scan_type;
+} tport_result;
 
-//define configuration structure
-// typedef struct {
-//     char target_ip[16];
-//     int start_port;
-//     int end_port;
-//     int thread_count;
-//     unsigned int scan_types;
-//     double timeout;
-//     pthread_mutex_t mutex;
-// } t_config;
-
-//define scanner context
 typedef struct {
     pcap_t *handle;
     int raw_socket;
-    pthread_mutex_t *mutex;
     t_scan_config *config;
+    tport_result *results;
+    pthread_mutex_t *mutex;
 } t_context;
 
 typedef struct {
-    int port;
-    scan_type_t scan_type;
-    enum {
-        PORT_UNKNOWN,
-        PORT_OPEN,
-        PORT_CLOSED,
-        PORT_FILTERED,
-        PORT_UNFILTERED,
-        PORT_OPEN_FILTERED
-    } status;
-} t_scan_result;
-
+    t_context *ctx;
+    int start_port_index;
+    int end_port_index;
+    int thread_id;
+} t_thread_data;
 
 int initialize_scanner(t_context *ctx);
-void scan_port(int port, t_context *g_context);
+void *scan_thread(void *arg);
+void perform_scan(t_context *ctx);
+void cleanup_scanner(t_context *ctx);
+void process_packet(u_char *user, const struct pcap_pkthdr *pkthdr __attribute__((unused)), const u_char *packet);
+void scan_port( t_context *ctx);
 
 #endif
