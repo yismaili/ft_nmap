@@ -14,7 +14,6 @@ RUN apt-get install tcpdump -y
 RUN apt-get install nmap -y;
 RUN apt-get install libpcap-dev -y;
 WORKDIR /app
-COPY . .
-EXPOSE 22
+# COPY . .
 
-CMD /bin/bash
+CMD ["/bin/bash"]

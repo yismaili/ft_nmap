@@ -100,6 +100,7 @@ static void send_probe_packet(t_context *ctx, const char *target_ip, int port, i
     sendto(ctx->raw_socket, packet, sizeof(packet), 0, (struct sockaddr *)&dest, sizeof(dest));
     pthread_mutex_unlock(ctx->mutex);
 }
+
 void scan_port( t_context *ctx) 
 {
     int j = 0, i;
