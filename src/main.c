@@ -40,27 +40,31 @@ void debug_config(t_scan_config config) {
 
 int main(int argc, char **argv) {
    // init config
+    t_context context;
     t_scan_config config;
-    init_config(&config);
-    t_context g_context;
-    
-    memset(&config, 0, sizeof(config));
 
+    init_config(&config);
+    memset(&config, 0, sizeof(config));
     if (!parse_arguments(argc, argv, &config)) {
         printf("Usage: %s --ip <target_ip> [--ports <start-end>] [--speedup <threads>]\n", argv[0]);
         exit(2);
     }
 
-  //  debug_config(config)
+  // debug_config(config);
 
-    //init context
-    g_context.config = &config;
-    if (initialize_scanner(&g_context) < 0) {
+    context.config = &config;
+    if (initialize_scanner(&context) < 0) {
         fprintf(stderr, "Failed to initialize scanner\n");
         exit(2);
     }
-    scan_port( &g_context);
-    close(g_context.raw_socket);
+    if (config.thread_count == 0)
+    {
+        scan_port(&context);
+    }
+    else{
+      perform_scan( &context);
+      cleanup_scanner(&context);
+    }
 
     return 0;
 }
