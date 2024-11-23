@@ -32,3 +32,6 @@ bbc.co.uk
 cnn.com
 reuters.com
 nytimes.com
+
+
+sudo ./ft_nmap --ip 145.223.117.65,185.203.217.46 --ports 80-100 --speedup 85
