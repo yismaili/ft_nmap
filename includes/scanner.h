@@ -26,6 +26,7 @@ typedef struct {
 
 typedef struct {
     pcap_t *handle;
+    struct timespec start_time, finish_time;
     int raw_socket;
     t_scan_config *config;
     tport_result *results;
@@ -45,5 +46,6 @@ void perform_scan(t_context *ctx);
 void cleanup_scanner(t_context *ctx);
 void process_packet(u_char *user, const struct pcap_pkthdr *pkthdr __attribute__((unused)), const u_char *packet);
 void scan_port( t_context *ctx);
+void retrieve_local_ip_address(char* buffer);
 
 #endif

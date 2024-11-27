@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
   // debug_config(config);
 
     context.config = &config;
+    clock_gettime(CLOCK_MONOTONIC, &(context.start_time));
     if (initialize_scanner(&context) < 0) {
         fprintf(stderr, "Failed to initialize scanner\n");
         exit(2);

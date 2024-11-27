@@ -19,23 +19,57 @@ int initialize_scanner(t_context *ctx)
         return -1;
     }
 
-    ctx->handle = pcap_open_live("any", 65535, 1, CAPTURE_TIMEOUT, errbuf);
-    if (ctx->handle == NULL)
-    {
+    // Open pcap for packet capture
+    ctx->handle = pcap_open_live("any", BUFSIZ, 1, CAPTURE_TIMEOUT, errbuf);
+    if (ctx->handle == NULL) {
         fprintf(stderr, "Failed to open pcap: %s\n", errbuf);
         close(ctx->raw_socket);
         return -1;
     }
 
-    ctx->mutex = malloc(sizeof(pthread_mutex_t));
-    if (pthread_mutex_init(ctx->mutex, NULL) != 0)
-    {
-        fprintf(stderr, "Failed to initialize mutex\n");
+    // Set pcap filter to only capture relevant packets
+    struct bpf_program fp;
+    char filter_exp[256];
+    snprintf(filter_exp, sizeof(filter_exp), "tcp or icmp");
+    
+    if (pcap_compile(ctx->handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) {
+        fprintf(stderr, "Failed to compile filter: %s\n", pcap_geterr(ctx->handle));
         pcap_close(ctx->handle);
         close(ctx->raw_socket);
         return -1;
     }
     
+    if (pcap_setfilter(ctx->handle, &fp) == -1) {
+        fprintf(stderr, "Failed to set filter: %s\n", pcap_geterr(ctx->handle));
+        pcap_freecode(&fp);
+        pcap_close(ctx->handle);
+        close(ctx->raw_socket);
+        return -1;
+    }
+    pcap_freecode(&fp);
+
+    // Initialize mutex
+    ctx->mutex = malloc(sizeof(pthread_mutex_t));
+    if (!ctx->mutex || pthread_mutex_init(ctx->mutex, NULL) != 0) {
+        fprintf(stderr, "Failed to initialize mutex\n");
+        pcap_close(ctx->handle);
+        close(ctx->raw_socket);
+        free(ctx->mutex);
+        return -1;
+    }
+
+    // Initialize results storage
+    ctx->results = calloc(1024, sizeof(tport_result));
+    if (!ctx->results) {
+        fprintf(stderr, "Failed to allocate results storage\n");
+        pthread_mutex_destroy(ctx->mutex);
+        pcap_close(ctx->handle);
+        close(ctx->raw_socket);
+        free(ctx->mutex);
+        return -1;
+    }
+
+    return 0;
     return 0;
 }
 
@@ -101,36 +135,70 @@ static void send_probe_packet(t_context *ctx, const char *target_ip, int port, i
     pthread_mutex_unlock(ctx->mutex);
 }
 
-void scan_port( t_context *ctx) 
-{
-    int j = 0, i;
 
-    while (j < ctx->config->ip_count)
+void process_packet(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet) {
+    struct ip *ip_header = (struct ip *)(packet);
+    struct tcphdr *tcp_header = (struct tcphdr *)(packet + sizeof(struct ip));
+    if (ip_header->ip_p == IPPROTO_TCP) {
+        if ((tcp_header->th_flags & TH_SYN) && (tcp_header->th_flags & TH_ACK)) {
+            printf("Port %d is OPEN\n", ntohs(tcp_header->th_dport));
+        }
+        else if (tcp_header->th_flags & TH_RST) {
+            printf("Port %d is CLOSED\n", ntohs(tcp_header->th_dport));
+        }
+        else if ((tcp_header->th_flags & (TH_SYN | TH_ACK | TH_RST)) == 0) {
+            printf("Port %d might be FILTERED\n", ntohs(tcp_header->th_dport));
+        } else {
+            printf("Unexpected response for port %d\n", ntohs(tcp_header->th_dport));
+        }
+    }
+}
+
+
+
+void scan_port(t_context *ctx) {
+    int j = 0, i;
+    while (j < ctx->config->ip_count) 
     {
         i = 0;
-        while (i < ctx->config->port_count) 
+        while (i < ctx->config->port_count)
         {
             int port = ctx->config->ports[i];
-            
-            if (ctx->config->scan_types.syn)
-                send_probe_packet(ctx, ctx->config->target_ips[j], port, 0);
-            if (ctx->config->scan_types.null)
-                send_probe_packet(ctx, ctx->config->target_ips[j], port, 1);
-            if (ctx->config->scan_types.ack)
-                send_probe_packet(ctx, ctx->config->target_ips[j], port, 2);
-            if (ctx->config->scan_types.fin)
-                send_probe_packet(ctx, ctx->config->target_ips[j], port, 3);
-            if (ctx->config->scan_types.xmas)
-                send_probe_packet(ctx, ctx->config->target_ips[j], port, 4);
-            if (ctx->config->scan_types.udp)
-                send_probe_packet(ctx, ctx->config->target_ips[j], port, 5);
-            i++;
+
+            // Send probe packets for each scan type
+            if (ctx->config->scan_types.syn) {
+                send_probe_packet(ctx, ctx->config->target_ips[j], port, 0);  
+            }
+            if (ctx->config->scan_types.null) {
+                send_probe_packet(ctx, ctx->config->target_ips[j], port, 1); 
+            }
+            if (ctx->config->scan_types.ack) {
+                send_probe_packet(ctx, ctx->config->target_ips[j], port, 2);  
+            }
+            if (ctx->config->scan_types.fin) {
+                send_probe_packet(ctx, ctx->config->target_ips[j], port, 3); 
+            }
+            if (ctx->config->scan_types.xmas) {
+                send_probe_packet(ctx, ctx->config->target_ips[j], port, 4);  
+            }
+            if (ctx->config->scan_types.udp) {
+                send_probe_packet(ctx, ctx->config->target_ips[j], port, 5);  
+            }
+
+            // Now we capture packets using pcap for a brief moment to check the responses
+            // Capture a packet for a short timeout (e.g., 100ms)
+            if (pcap_loop(ctx->handle, 1, process_packet, NULL) < 0) {
+                fprintf(stderr, "Error capturing packet: %s\n", pcap_geterr(ctx->handle));
+            }
+
+            i++; 
         }
         j++;
     }
-    
-    return;
+
+    pcap_close(ctx->handle); 
 }
+
 
 void *scan_thread(void *arg) 
 {
