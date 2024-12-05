@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS =  -I./includes
-LDFLAGS = -lpcap -lpthread
+LDFLAGS = -lpcap -lpthread -lresolv -lm
 
 SRC_DIR = src
 OBJ_DIR = obj
