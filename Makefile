@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS =  -I./includes
-LDFLAGS = -lpcap -lpthread
+CFLAGS =  -I./includes 
+LDFLAGS = -lpcap -lpthread -lresolv -lm #-g -fsanitize=address
 
 SRC_DIR = src
 OBJ_DIR = obj
