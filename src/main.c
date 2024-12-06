@@ -1,6 +1,6 @@
 #include "../includes/ft_nmap.h"
 #include "../includes/scanner.h"
-
+#include <errno.h>
 void init_config(t_scan_config *config) {
   config->target_ips = NULL;
   config->ip_count = 0;
@@ -38,10 +38,13 @@ void debug_config(t_scan_config config) {
 
 
 
-int main(int argc, char **argv) {
-   // init config
+int main(int argc, char **argv) 
+{
     t_context context;
     t_scan_config config;
+    int total_open_host = 0;
+    struct timespec start_time, finish_time;
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
 
     init_config(&config);
     memset(&config, 0, sizeof(config));
@@ -49,22 +52,32 @@ int main(int argc, char **argv) {
         printf("Usage: %s --ip <target_ip> [--ports <start-end>] [--speedup <threads>]\n", argv[0]);
         exit(2);
     }
-
-  // debug_config(config);
-
     context.config = &config;
-    if (initialize_scanner(&context) < 0) {
+
+    retrieve_local_ip_address(&context);
+    if (init_row_socket(&context) < 0) {
         fprintf(stderr, "Failed to initialize scanner\n");
         exit(2);
     }
-    if (config.thread_count == 0)
+    int i = 0; 
+    while (i < config.ip_count)
     {
-        scan_port(&context);
+      scan_port(&context,config.target_ips[i]);
+      i++;
     }
-    else{
-      perform_scan( &context);
-      cleanup_scanner(&context);
-    }
+    
+    close(context.raw_socket);
+    clock_gettime(CLOCK_MONOTONIC, &finish_time);
 
+    double program_duration = (finish_time.tv_sec - start_time.tv_sec);
+    program_duration += (finish_time.tv_nsec - start_time.tv_nsec) / 1000000000.0;
+
+    int hours_duration = program_duration / 3600;
+    int mins_duration = (int)(program_duration / 60) % 60;
+    double secs_duration = fmod(program_duration, 60);
+
+    printf("\nTotal active host: %d\n",total_open_host);
+    printf("Scan duration    : %d hour(s) %d min(s) %.05lf sec(s)\n", hours_duration, mins_duration, secs_duration);
+  
     return 0;
 }
