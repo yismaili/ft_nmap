@@ -56,6 +56,18 @@ static void send_probe_packet(t_context *ctx, const char *target_ip, int port, i
     ip_header->ip_ttl = 64;
     ip_header->ip_p = IPPROTO_TCP;
     
+    if (ctx->config->hide_source_ip) {
+			char *random_ip = generate_random_ip();
+			inet_pton(AF_INET, random_ip, &(ip_header->ip_src));
+			free(random_ip);
+    }
+
+    if (ctx->config->bypass_ids) {
+        ip_header->ip_ttl = 128;
+        tcp_header->th_sport = htons(rand() % 65535);
+    }
+
+    inet_pton(AF_INET, target_ip, &(ip_header->ip_dst));
     if (scan_type == 5) 
     {
         ip_header->ip_p = IPPROTO_UDP;
@@ -124,6 +136,10 @@ void scan_port( t_context *ctx)
                 send_probe_packet(ctx, ctx->config->target_ips[j], port, 4);
             if (ctx->config->scan_types.udp)
                 send_probe_packet(ctx, ctx->config->target_ips[j], port, 5);
+						if (ctx->config->version_detection) {
+								char *version = detect_service_version(ctx->config->target_ips[j], port, ctx->config->timeout);
+								printf("Detected service version of %s:%d: %s\n", ctx->config->target_ips[j], port, version);
+						}
             i++;
         }
         j++;
@@ -214,6 +230,11 @@ void cleanup_scanner(t_context *ctx) {
     if (ctx->raw_socket >= 0) {
         close(ctx->raw_socket);
         ctx->raw_socket = -1;
+    }
+
+    if (ctx->config->logfile) {
+        free(ctx->config->logfile);
+        ctx->config->logfile = NULL;
     }
 }
 

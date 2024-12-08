@@ -1,2 +1,20 @@
-.vscode
- .DS_Store/
+ft_nmap
+
+*.o
+
+*.lib
+*.a
+
+*.exe
+*.out
+*.app
+
+*.dSYM/
+
+*.d
+
+*.swp
+*~
+
+.vscode/
+.idea/

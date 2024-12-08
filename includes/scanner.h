@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <pcap.h>
+#include <ifaddrs.h>
 #include "../includes/ft_nmap.h"
 
 #define CAPTURE_TIMEOUT 1000
@@ -45,5 +46,7 @@ void perform_scan(t_context *ctx);
 void cleanup_scanner(t_context *ctx);
 void process_packet(u_char *user, const struct pcap_pkthdr *pkthdr __attribute__((unused)), const u_char *packet);
 void scan_port( t_context *ctx);
+char *detect_service_version(const char *target, int port, int config_timeout);
+const char *detect_os(const char *target, int timeout);
 
 #endif
