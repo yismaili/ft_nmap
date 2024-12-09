@@ -60,13 +60,15 @@ int main(int argc, char **argv)
         exit(2);
     }
     int i = 0; 
+
     while (i < config.ip_count)
     {
-      scan_port(&context,config.target_ips[i]);
+      if (config.thread_count == 0)
+        scan_port(&context,config.target_ips[i]);
+      else
+        start_threaded_scan(&context);
       i++;
     }
-    
-    close(context.raw_socket);
     clock_gettime(CLOCK_MONOTONIC, &finish_time);
 
     double program_duration = (finish_time.tv_sec - start_time.tv_sec);

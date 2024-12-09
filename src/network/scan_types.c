@@ -39,25 +39,6 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
     pthread_join(sniffer_thread, NULL);
 }
 
-void execute_network_scan_2(t_context *ctx, const char* target, int scan_type)
-{
-    struct in_addr target_in_addr;
-    pthread_t sniffer_thread;
-
-    if (inet_pton(AF_INET, target, &target_in_addr) <= 0) {
-        printf("Invalid target IP address: %s\n", target);
-        return;
-    }
-    if (pthread_create(&sniffer_thread, NULL, capture_syn_ack_response, ctx) < 0)
-    {
-        printf("Could not create sniffer thread");
-        exit(2);
-    }
-    get_source_network_interface(ctx, scan_type, &target_in_addr);
-    pthread_join(sniffer_thread, NULL);
-}
-
-
 void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr* target_in_addr)
 {
     char datagram[4096];

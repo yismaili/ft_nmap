@@ -40,7 +40,7 @@ typedef struct {
     pcap_t *handle;
     t_scan_config *config;
     t_result *results;
-    pthread_mutex_t *mutex;
+    pthread_mutex_t *mutex_lock;
 } t_context;
 
 typedef struct {
@@ -73,5 +73,6 @@ unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes);
 void scan_port(t_context *ctx, char *ip_addr);
 void cleanup_scanner(t_context *ctx);
 const char* format_ipv4_address_to_string(const struct in_addr* addr);
-void execute_network_scan_2(t_context *ctx, const char* target, int scan_type);
+void start_threaded_scan(t_context *ctx);
+void* thread_scan_ports(void *arg);
 #endif

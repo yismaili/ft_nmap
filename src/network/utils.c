@@ -71,19 +71,68 @@ void scan_port(t_context *ctx, char *ip_addr)
 
 void cleanup_scanner(t_context *ctx) 
 {
-    if (ctx->mutex) {
-        pthread_mutex_destroy(ctx->mutex);
-        free(ctx->mutex);
-        ctx->mutex = NULL;
+    if (ctx->mutex_lock) {
+        pthread_mutex_destroy(ctx->mutex_lock);
+        free(ctx->mutex_lock);
+        ctx->mutex_lock = NULL;
     }
     
-    // if (ctx->handle) {
-    //     pcap_close(ctx->handle);
-    //     ctx->handle = NULL;
-    // }
+    if (ctx->handle) {
+        pcap_close(ctx->handle);
+        ctx->handle = NULL;
+    }
     
     if (ctx->raw_socket >= 0) {
         close(ctx->raw_socket);
         ctx->raw_socket = -1;
+    }
+}
+
+void print_scan_results(t_context *ctx, const char* target_ip) {
+    printf("\nScan Results for IP: %s\n", target_ip);
+    printf("------------------------------\n");
+
+    printf("Open Ports:\n");
+    printf("Port\tService\t\tScan Results\n");
+    printf("----------------------------------------\n");
+
+    // Track if any open ports found
+    bool open_ports_found = false;
+
+    for (int i = 0; i < ctx->config->port_count; i++) {
+        int port = ctx->config->ports[i];
+        t_result* result = &ctx->results[i];
+
+        // Check if port is open
+        if (result->is_open) {
+            open_ports_found = true;
+            printf("%d\t%s\t\t", 
+                   port, 
+                   result->service_name[0] ? result->service_name : "Unknown");
+
+            // Print scan type results
+            switch(result->scan_type) {
+                case SYN_SCAN:
+                    printf("SYN(Open)");
+                    break;
+                case FIN_SCAN:
+                    printf("FIN(Open)");
+                    break;
+                case NULL_SCAN:
+                    printf("NULL(Open)");
+                    break;
+                case XMAS_SCAN:
+                    printf("XMAS(Open)");
+                    break;
+                default:
+                    printf("Open");
+                    break;
+            }
+            printf("\n");
+        }
+    }
+
+    if (!open_ports_found) {
+        printf("No open ports found.\n");
     }
 }

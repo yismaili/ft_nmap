@@ -66,8 +66,8 @@ int start_packet_sniffer(t_context *ctx)
     }
     pcap_loop(ctx->handle, 2, packet_handler, (u_char*)ctx);
     // exit(2);
-    pcap_freecode(&fp);
-    pcap_close(ctx->handle);
+    // pcap_freecode(&fp);
+    // pcap_close(ctx->handle);
 
     return 0;
 }
