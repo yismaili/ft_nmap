@@ -47,27 +47,37 @@ int start_packet_sniffer(t_context *ctx)
     char errbuf[PCAP_ERRBUF_SIZE];
     struct bpf_program fp;
     char filter_exp[100];
-// printf("-----%s\n",ctx->local_ip);
+
+    pthread_mutex_lock(ctx->mutex_lock);
+    
     ctx->handle = pcap_open_live("eth0", BUFSIZ, 1, 1000, errbuf);
     if (ctx->handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", "eth0", errbuf);
+        pthread_mutex_unlock(ctx->mutex_lock);
         return -1;
     }
 
     snprintf(filter_exp, sizeof(filter_exp), "tcp and src host %s", inet_ntoa(ctx->dest_ip));
     if (pcap_compile(ctx->handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) {
         fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(ctx->handle));
+        pcap_close(ctx->handle);
+        pthread_mutex_unlock(ctx->mutex_lock);
         return -1;
     }
     
     if (pcap_setfilter(ctx->handle, &fp) == -1) {
         fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(ctx->handle));
+        pcap_freecode(&fp);
+        pcap_close(ctx->handle);
+        pthread_mutex_unlock(ctx->mutex_lock);
         return -1;
     }
-    pcap_loop(ctx->handle, 2, packet_handler, (u_char*)ctx);
-    // exit(2);
-    // pcap_freecode(&fp);
-    // pcap_close(ctx->handle);
+
+    pcap_loop(ctx->handle, 1, packet_handler, (u_char*)ctx);
+    
+    pcap_freecode(&fp);
+    pcap_close(ctx->handle);
+    pthread_mutex_unlock(ctx->mutex_lock);
 
     return 0;
 }

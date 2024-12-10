@@ -48,6 +48,14 @@ int main(int argc, char **argv)
 
     init_config(&config);
     memset(&config, 0, sizeof(config));
+    
+    // Initialize mutex
+    context.mutex_lock = malloc(sizeof(pthread_mutex_t));
+    if (pthread_mutex_init(context.mutex_lock, NULL) != 0) {
+        fprintf(stderr, "Failed to initialize mutex\n");
+        exit(2);
+    }
+    
     if (!parse_arguments(argc, argv, &config)) {
         printf("Usage: %s --ip <target_ip> [--ports <start-end>] [--speedup <threads>]\n", argv[0]);
         exit(2);
