@@ -41,32 +41,27 @@ unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes)
 void scan_port(t_context *ctx, char *ip_addr) 
 {
     if (ctx->config->scan_types.syn){
-            printf("hi 0");
         execute_network_scan(ctx, ip_addr, SYN_SCAN);
     }  
     if (ctx->config->scan_types.null)
     {
-        printf("hi 1");
         execute_network_scan(ctx, ip_addr, NULL_SCAN);
     }
     if (ctx->config->scan_types.ack){
-        printf("hi 2");
         execute_network_scan(ctx, ip_addr, ACK_SCAN);
     }
     if (ctx->config->scan_types.fin)
     {
-        printf("hi 3");
         execute_network_scan(ctx, ip_addr, FIN_SCAN);
     }
     if (ctx->config->scan_types.xmas)
     {
-        printf("hi 4");
         execute_network_scan(ctx, ip_addr, XMAS_SCAN);
     }
     if (ctx->config->scan_types.udp){
-        printf("hi 5");
         execute_network_scan(ctx, ip_addr, 0);
-    }        
+    }
+    print_scan_results(ctx, ip_addr);    
 }
 
 void cleanup_scanner(t_context *ctx) 
@@ -88,7 +83,8 @@ void cleanup_scanner(t_context *ctx)
     }
 }
 
-void print_scan_results(t_context *ctx, const char* target_ip) {
+void print_scan_results(t_context *ctx, const char* target_ip) 
+{
     printf("\nScan Results for IP: %s\n", target_ip);
     printf("------------------------------\n");
 
@@ -106,9 +102,7 @@ void print_scan_results(t_context *ctx, const char* target_ip) {
         // Check if port is open
         if (result->is_open) {
             open_ports_found = true;
-            printf("%d\t%s\t\t", 
-                   port, 
-                   result->service_name[0] ? result->service_name : "Unknown");
+            printf("%d\t%s\t\t", port,result->service_name[0] ? result->service_name : "Unknown");
 
             // Print scan type results
             switch(result->scan_type) {

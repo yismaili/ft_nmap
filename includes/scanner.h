@@ -75,4 +75,5 @@ void cleanup_scanner(t_context *ctx);
 const char* format_ipv4_address_to_string(const struct in_addr* addr);
 void start_threaded_scan(t_context *ctx);
 void* thread_scan_ports(void *arg);
+void print_scan_results(t_context *ctx, const char* target_ip);
 #endif

@@ -46,8 +46,8 @@ int main(int argc, char **argv)
     struct timespec start_time, finish_time;
     clock_gettime(CLOCK_MONOTONIC, &start_time);
 
-    init_config(&config);
     memset(&config, 0, sizeof(config));
+    init_config(&config);
     
     // Initialize mutex
     context.mutex_lock = malloc(sizeof(pthread_mutex_t));
@@ -61,6 +61,19 @@ int main(int argc, char **argv)
         exit(2);
     }
     context.config = &config;
+    // Initialize results array
+    context.results = calloc(config.port_count, sizeof(t_result));
+    if (!context.results) {
+        fprintf(stderr, "Failed to allocate memory for results\n");
+        exit(2);
+    }
+    // Initialize each result
+    for (int i = 0; i < config.port_count; i++) {
+        context.results[i].port = config.ports[i];
+        context.results[i].is_open = false;
+        context.results[i].scan_type = -1;
+        context.results[i].service_name[0] = '\0';
+    }
 
     retrieve_local_ip_address(&context);
     if (init_row_socket(&context) < 0) {
@@ -89,5 +102,8 @@ int main(int argc, char **argv)
     printf("\nTotal active host: %d\n",total_open_host);
     printf("Scan duration    : %d hour(s) %d min(s) %.05lf sec(s)\n", hours_duration, mins_duration, secs_duration);
   
+    if (context.results) {
+        free(context.results);
+    }
     return 0;
 }
