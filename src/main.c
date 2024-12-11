@@ -87,7 +87,7 @@ int main(int argc, char **argv)
       if (config.thread_count == 0)
         scan_port(&context,config.target_ips[i]);
       else
-        start_threaded_scan(&context);
+        start_threaded_scan(&context, config.target_ips[i]);
       i++;
     }
     clock_gettime(CLOCK_MONOTONIC, &finish_time);
