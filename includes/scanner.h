@@ -49,6 +49,7 @@ typedef struct {
     int start_port_index;
     int end_port_index;
     int thread_id;
+    char *target_ip;
 } t_thread_data;
 
 struct pseudo_header {
@@ -74,7 +75,7 @@ unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes);
 void scan_port(t_context *ctx, char *ip_addr);
 void cleanup_scanner(t_context *ctx);
 const char* format_ipv4_address_to_string(const struct in_addr* addr);
-void start_threaded_scan(t_context *ctx);
 void* thread_scan_ports(void *arg);
 void print_scan_results(t_context *ctx, const char* target_ip);
+void start_threaded_scan(t_context *ctx, char *target_ip);
 #endif
