@@ -17,6 +17,7 @@
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
 #include <errno.h> 
+#include <sys/select.h>
 
 #define SYN_SCAN  0
 #define FIN_SCAN  1

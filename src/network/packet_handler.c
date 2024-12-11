@@ -62,6 +62,9 @@ int start_packet_sniffer(t_context *ctx)
     char errbuf[PCAP_ERRBUF_SIZE];
     struct bpf_program fp;
     char filter_exp[100];
+    struct timeval timeout;
+    fd_set read_fds;
+    int fd;
 
     pthread_mutex_lock(ctx->mutex_lock);
     
@@ -69,6 +72,14 @@ int start_packet_sniffer(t_context *ctx)
     if (ctx->handle == NULL) 
     {
         fprintf(stderr, "Couldn't open device %s: %s\n", "eth0", errbuf);
+        pthread_mutex_unlock(ctx->mutex_lock);
+        return -1;
+    }
+
+    fd = pcap_get_selectable_fd(ctx->handle);
+    if (fd == -1) {
+        fprintf(stderr, "pcap handle doesn't support select()\n");
+        pcap_close(ctx->handle);
         pthread_mutex_unlock(ctx->mutex_lock);
         return -1;
     }
@@ -91,7 +102,25 @@ int start_packet_sniffer(t_context *ctx)
         return -1;
     }
 
-    pcap_loop(ctx->handle, 2, packet_handler, (u_char*)ctx);
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
+
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+
+    int ready = select(fd + 1, &read_fds, NULL, NULL, &timeout);
+    if (ready == -1) {
+        fprintf(stderr, "Select error: %s\n", strerror(errno));
+    } else if (ready == 0) {
+        pcap_freecode(&fp);
+        pcap_close(ctx->handle);
+        pthread_mutex_unlock(ctx->mutex_lock);
+        return 0;
+    }
+
+    if (FD_ISSET(fd, &read_fds)) {
+        pcap_loop(ctx->handle, 2, packet_handler, (u_char*)ctx);
+    }
     
     pcap_freecode(&fp);
     pcap_close(ctx->handle);

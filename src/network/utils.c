@@ -92,19 +92,14 @@ void print_scan_results(t_context *ctx, const char* target_ip)
     printf("Port\tService\t\tScan Results\n");
     printf("----------------------------------------\n");
 
-    // Track if any open ports found
     bool open_ports_found = false;
 
     for (int i = 0; i < ctx->config->port_count; i++) {
         int port = ctx->config->ports[i];
         t_result* result = &ctx->results[i];
-
-        // Check if port is open
         if (result->is_open) {
             open_ports_found = true;
             printf("%d\t%s\t\t", port,result->service_name[0] ? result->service_name : "Unknown");
-
-            // Print scan type results
             switch(result->scan_type) {
                 case SYN_SCAN:
                     printf("SYN(Open)");
