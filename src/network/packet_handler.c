@@ -62,9 +62,11 @@ int start_packet_sniffer(t_context *ctx)
     char errbuf[PCAP_ERRBUF_SIZE];
     struct bpf_program fp;
     char filter_exp[100];
+
     struct timeval timeout;
     fd_set read_fds;
     int fd;
+
 
     pthread_mutex_lock(ctx->mutex_lock);
     
@@ -81,6 +83,7 @@ int start_packet_sniffer(t_context *ctx)
         fprintf(stderr, "pcap handle doesn't support select()\n");
         pcap_close(ctx->handle);
         pthread_mutex_unlock(ctx->mutex_lock);
+
         return -1;
     }
 
