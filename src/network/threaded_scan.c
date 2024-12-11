@@ -82,7 +82,8 @@ void* thread_scan_ports(void *arg) {
     return NULL;
 }
 
-void start_threaded_scan(t_context *ctx) {
+void start_threaded_scan(t_context *ctx) 
+{
     pthread_t *threads = malloc(ctx->config->thread_count * sizeof(pthread_t));
     t_thread_data *thread_data = malloc(ctx->config->thread_count * sizeof(t_thread_data));
 
@@ -117,7 +118,7 @@ void start_threaded_scan(t_context *ctx) {
     for (int i = 0; i < ctx->config->thread_count; i++) {
         pthread_join(threads[i], NULL);
     }
-
+     print_scan_results(ctx, ctx->config->target_ips[0]); 
     free(threads);
     free(thread_data);
 }
