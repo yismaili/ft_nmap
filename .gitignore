@@ -18,3 +18,4 @@ ft_nmap
 
 .vscode/
 .idea/
+.vagrant/
