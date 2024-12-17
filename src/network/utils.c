@@ -1,18 +1,5 @@
 #include "../../includes/scanner.h"
 
-void resolve_ip_to_hostname(const char* ip, char* buffer)
-{
-    struct sockaddr_in dest;
-
-    memset(&dest, 0, sizeof(dest));
-    dest.sin_family = AF_INET;
-    dest.sin_addr.s_addr = inet_addr(ip);
-    dest.sin_port = 0;
-
-    if (getnameinfo((struct sockaddr*)&dest, sizeof(dest), buffer, NI_MAXHOST, NULL, 0, NI_NAMEREQD) != 0)
-        strcpy(buffer, "Hostname can't be determined");
-}
-
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes)
 {
     register long sum;

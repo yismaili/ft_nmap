@@ -56,6 +56,14 @@ void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target
 
     craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type);
 
+// printf("Source Port: %d\n", ntohs(tcph->source));
+// printf("Destination Port: %d\n", ntohs(tcph->dest));
+// printf("Flags: %d\n", tcph->syn);
+// printf("Source IP: %s\n", inet_ntoa(*(struct in_addr*)&iph->saddr));
+// printf("Destination IP: %s\n", inet_ntoa(*(struct in_addr*)&iph->daddr));
+// printf("Protocol: %d\n", iph->protocol);
+
+
     while (i < ctx->config->port_count) 
     {
         int port = ctx->config->ports[i];
@@ -77,7 +85,8 @@ void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target
 
         tcph->check = calculate_ip_tcp_checksum((unsigned short*)&psh, sizeof(struct pseudo_header));
 
-        if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0){
+        if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct tcphdr),
+            0, (struct sockaddr*)&dest, sizeof(dest)) < 0){
             printf("Error sending syn packet.");
             exit(2);
         }

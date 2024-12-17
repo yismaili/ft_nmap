@@ -70,7 +70,6 @@ int init_row_socket(t_context *ctx);
 void execute_network_scan(t_context *ctx, const char* target, int scan_type);
 void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
 void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type);
-void resolve_ip_to_hostname(const char* ip, char* buffer);
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes);
 void scan_port(t_context *ctx, char *ip_addr);
 void cleanup_scanner(t_context *ctx);

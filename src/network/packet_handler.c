@@ -102,9 +102,9 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
                 if (service)
                     strncpy(ctx->results[result_idx].service_name, service->s_name, sizeof(ctx->results[result_idx].service_name) - 1);
                 
-                char source_ip_str[INET_ADDRSTRLEN];
-                inet_ntop(AF_INET, &(iph->saddr), source_ip_str, INET_ADDRSTRLEN);
-                fflush(stdout);
+                // char source_ip_str[INET_ADDRSTRLEN];
+                // inet_ntop(AF_INET, &(iph->saddr), source_ip_str, INET_ADDRSTRLEN);
+                // fflush(stdout);
             }
         }
     }
