@@ -1,7 +1,7 @@
 
 #include "../includes/scanner.h"
 
-void retrieve_local_ip_address(t_context *ctx)
+void retrieve_source_ip_address(t_context *ctx)
 {
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -30,9 +30,9 @@ void retrieve_local_ip_address(t_context *ctx)
     	exit (2);
 	}
 
-    inet_ntop(AF_INET, &name.sin_addr, ctx->local_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &name.sin_addr, ctx->source_ip, INET_ADDRSTRLEN);
     // printf("The local port number is: %d\n", ntohs(name.sin_port));
-    // printf("The local port number is: %s\n", ctx->local_ip);
+    // printf("The local port number is: %s\n", ctx->source_ip);
     close(sock);
     // exit (2);
 }

@@ -11,7 +11,7 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
         return;
     }
 
-    craft_tcp_packet(ctx, datagram, ctx->local_ip, iph, tcph, scan_type);
+    craft_tcp_packet(ctx, datagram, ctx->source_ip, iph, tcph, scan_type);
 
     struct sockaddr_in dest;
     struct pseudo_header psh;
@@ -21,7 +21,7 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
     tcph->dest = htons(port);
     tcph->check = 0;
 
-    psh.source_address = inet_addr(ctx->local_ip);
+    psh.source_address = inet_addr(ctx->source_ip);
     psh.dest_address = dest.sin_addr.s_addr;
     psh.placeholder = 0;
     psh.protocol = IPPROTO_TCP;

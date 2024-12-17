@@ -41,9 +41,9 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
 
 void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr)
 {
-    char datagram[4096];
-    struct iphdr* iph = (struct iphdr*)datagram;
-    struct tcphdr* tcph = (struct tcphdr*)(datagram + sizeof(struct ip));
+    char buffer_packet[4096];
+    struct iphdr* iph = (struct iphdr*)buffer_packet;
+    struct tcphdr* tcph = (struct tcphdr*)(buffer_packet + sizeof(struct ip));
     int i = 0;
 
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
@@ -54,7 +54,7 @@ void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target
         exit(2);
     }
 
-    craft_tcp_packet(ctx, datagram, ctx->local_ip, iph, tcph, scan_type);
+    craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type);
 
     while (i < ctx->config->port_count) 
     {
@@ -67,7 +67,7 @@ void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target
         tcph->dest = htons(port);
         tcph->check = 0;
 
-        psh.source_address = inet_addr(ctx->local_ip);
+        psh.source_address = inet_addr(ctx->source_ip);
         psh.dest_address = dest.sin_addr.s_addr;
         psh.placeholder = 0;
         psh.protocol = IPPROTO_TCP;
@@ -77,7 +77,7 @@ void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target
 
         tcph->check = calculate_ip_tcp_checksum((unsigned short*)&psh, sizeof(struct pseudo_header));
 
-        if (sendto(ctx->raw_socket, datagram, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0){
+        if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0){
             printf("Error sending syn packet.");
             exit(2);
         }
@@ -86,9 +86,9 @@ void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target
 }
 
 
-void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type)
+void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type)
 {
-    memset(datagram, 0, 4096);
+    memset(buffer_packet, 0, 4096);
 
     iph->ihl = 5;
     iph->version = 4;
@@ -101,7 +101,7 @@ void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, stru
     iph->check = 0;
     iph->saddr = inet_addr(source_ip);
     iph->daddr = ctx->dest_ip.s_addr;
-    iph->check = calculate_ip_tcp_checksum((unsigned short*)datagram, iph->tot_len >> 1);
+    iph->check = calculate_ip_tcp_checksum((unsigned short*)buffer_packet, iph->tot_len >> 1);
 
     tcph->source = htons(46156);
     tcph->dest = htons(80);

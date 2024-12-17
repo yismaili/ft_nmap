@@ -33,7 +33,7 @@ typedef struct {
 } t_result;
 
 typedef struct {
-    char local_ip[INET6_ADDRSTRLEN];
+    char source_ip[INET6_ADDRSTRLEN];
     struct in_addr dest_ip;
     int total_open_host;
     struct timespec start_time, finish_time;
@@ -65,7 +65,7 @@ struct pseudo_header {
 void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet);
 void* start_packet_sniffer(void* ptr);
 // void* capture_syn_ack_response(void* ptr);
-void retrieve_local_ip_address(t_context *ctx);
+void retrieve_source_ip_address(t_context *ctx);
 int init_row_socket(t_context *ctx);
 void execute_network_scan(t_context *ctx, const char* target, int scan_type);
 void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr);

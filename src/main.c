@@ -74,7 +74,7 @@ int main(int argc, char **argv)
         context.results[i].service_name[0] = '\0';
     }
 
-    retrieve_local_ip_address(&context);
+    retrieve_source_ip_address(&context);
     if (init_row_socket(&context) < 0) {
         fprintf(stderr, "Failed to initialize scanner\n");
         exit(2);
