@@ -35,11 +35,11 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
         printf("Could not create sniffer thread");
         exit(2);
     }
-    get_source_network_interface(ctx, scan_type, &target_in_addr);
+    send_tcp_scan_packets(ctx, scan_type, &target_in_addr);
     pthread_join(sniffer_thread, NULL);
 }
 
-void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr* target_in_addr)
+void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr)
 {
     char datagram[4096];
     struct iphdr* iph = (struct iphdr*)datagram;

@@ -68,7 +68,7 @@ void* start_packet_sniffer(void* ptr);
 void retrieve_local_ip_address(t_context *ctx);
 int init_row_socket(t_context *ctx);
 void execute_network_scan(t_context *ctx, const char* target, int scan_type);
-void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
+void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
 void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type);
 void resolve_ip_to_hostname(const char* ip, char* buffer);
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes);
