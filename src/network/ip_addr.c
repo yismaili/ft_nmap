@@ -6,18 +6,19 @@ void retrieve_local_ip_address(t_context *ctx)
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     const char* kGoogleDnsIp = "8.8.8.8";
-    int dns_port = 53;
+    // int dns_port = 53;
 
     struct sockaddr_in serv;
 
     memset(&serv, 0, sizeof(serv));
     serv.sin_family = AF_INET;
     serv.sin_addr.s_addr = inet_addr(kGoogleDnsIp);
-    serv.sin_port = htons(dns_port);
-
-    if (connect(sock, (const struct sockaddr*)&serv, sizeof(serv)) != 0){
+    // serv.sin_port = htons(dns_port);
+    // dummy conection with google server (DNS) to get local ip address
+    if (connect(sock, (const struct sockaddr*)&serv, sizeof(serv)) != 0)
+    {
         printf("Failed to get local IP\n");
-	exit (2);
+	    exit (2);
     }
 
 
@@ -29,8 +30,10 @@ void retrieve_local_ip_address(t_context *ctx)
     	exit (2);
 	}
 
-    inet_ntop(AF_INET, &name.sin_addr, ctx->local_ip, INET6_ADDRSTRLEN);
-
+    inet_ntop(AF_INET, &name.sin_addr, ctx->local_ip, INET_ADDRSTRLEN);
+    // printf("The local port number is: %d\n", ntohs(name.sin_port));
+    // printf("The local port number is: %s\n", ctx->local_ip);
     close(sock);
+    // exit (2);
 }
 

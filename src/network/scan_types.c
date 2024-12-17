@@ -30,7 +30,7 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
         printf("Invalid target IP address: %s\n", target);
         return;
     }
-    if (pthread_create(&sniffer_thread, NULL, capture_syn_ack_response, ctx) < 0)
+    if (pthread_create(&sniffer_thread, NULL, start_packet_sniffer, ctx) < 0)
     {
         printf("Could not create sniffer thread");
         exit(2);

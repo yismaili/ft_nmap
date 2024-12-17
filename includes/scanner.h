@@ -63,8 +63,8 @@ struct pseudo_header {
 };
 
 void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet);
-int start_packet_sniffer(t_context *ctx);
-void* capture_syn_ack_response(void* ptr);
+void* start_packet_sniffer(void* ptr);
+// void* capture_syn_ack_response(void* ptr);
 void retrieve_local_ip_address(t_context *ctx);
 int init_row_socket(t_context *ctx);
 void execute_network_scan(t_context *ctx, const char* target, int scan_type);

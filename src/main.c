@@ -48,8 +48,8 @@ int main(int argc, char **argv)
 
     memset(&config, 0, sizeof(config));
     init_config(&config);
+    context.total_open_host = 0;
     
-    // Initialize mutex
     context.mutex_lock = malloc(sizeof(pthread_mutex_t));
     if (pthread_mutex_init(context.mutex_lock, NULL) != 0) {
         fprintf(stderr, "Failed to initialize mutex\n");
@@ -61,13 +61,12 @@ int main(int argc, char **argv)
         exit(2);
     }
     context.config = &config;
-    // Initialize results array
     context.results = calloc(config.port_count, sizeof(t_result));
     if (!context.results) {
         fprintf(stderr, "Failed to allocate memory for results\n");
         exit(2);
     }
-    // Initialize each result
+  
     for (int i = 0; i < config.port_count; i++) {
         context.results[i].port = config.ports[i];
         context.results[i].is_open = false;
@@ -99,7 +98,7 @@ int main(int argc, char **argv)
     int mins_duration = (int)(program_duration / 60) % 60;
     double secs_duration = fmod(program_duration, 60);
 
-    printf("\nTotal active host: %d\n",total_open_host);
+    printf("\nTotal active host: %d\n",context.total_open_host);
     printf("Scan duration    : %d hour(s) %d min(s) %.05lf sec(s)\n", hours_duration, mins_duration, secs_duration);
   
     if (context.results) {

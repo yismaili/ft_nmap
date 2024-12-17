@@ -69,7 +69,7 @@ void* thread_scan_ports(void *arg) {
     t_context *ctx = thread_data->ctx;
 
     pthread_t sniffer_thread;
-    if (pthread_create(&sniffer_thread, NULL, capture_syn_ack_response, ctx) != 0) {
+    if (pthread_create(&sniffer_thread, NULL, start_packet_sniffer, ctx) != 0) {
         perror("Could not create sniffer thread");
         return NULL;
     }

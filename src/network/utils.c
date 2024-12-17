@@ -40,27 +40,18 @@ unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes)
 
 void scan_port(t_context *ctx, char *ip_addr) 
 {
-    if (ctx->config->scan_types.syn){
-        execute_network_scan(ctx, ip_addr, SYN_SCAN);
-    }  
+    if (ctx->config->scan_types.syn)
+        execute_network_scan(ctx, ip_addr, SYN_SCAN); 
     if (ctx->config->scan_types.null)
-    {
         execute_network_scan(ctx, ip_addr, NULL_SCAN);
-    }
-    if (ctx->config->scan_types.ack){
+    if (ctx->config->scan_types.ack)
         execute_network_scan(ctx, ip_addr, ACK_SCAN);
-    }
     if (ctx->config->scan_types.fin)
-    {
         execute_network_scan(ctx, ip_addr, FIN_SCAN);
-    }
     if (ctx->config->scan_types.xmas)
-    {
         execute_network_scan(ctx, ip_addr, XMAS_SCAN);
-    }
-    if (ctx->config->scan_types.udp){
+    if (ctx->config->scan_types.udp)
         execute_network_scan(ctx, ip_addr, 0);
-    }
     print_scan_results(ctx, ip_addr);    
 }
 
@@ -123,5 +114,7 @@ void print_scan_results(t_context *ctx, const char* target_ip)
 
     if (!open_ports_found) {
         printf("No open ports found.\n");
+    } else {
+        ctx->total_open_host++;
     }
 }
