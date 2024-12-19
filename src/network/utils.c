@@ -38,7 +38,7 @@ void scan_port(t_context *ctx, char *ip_addr)
     if (ctx->config->scan_types.xmas)
         execute_network_scan(ctx, ip_addr, XMAS_SCAN);
     if (ctx->config->scan_types.udp)
-        execute_network_scan(ctx, ip_addr, 0);
+        execute_network_scan(ctx, ip_addr, UDP_SCAN);
     print_scan_results(ctx, ip_addr);    
 }
 

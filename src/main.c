@@ -60,6 +60,7 @@ int main(int argc, char **argv)
         printf("Usage: %s --ip <target_ip> [--ports <start-end>] [--speedup <threads>]\n", argv[0]);
         exit(2);
     }
+    // debug_config(config);
     context.config = &config;
     context.results = calloc(config.port_count, sizeof(t_result));
     if (!context.results) {

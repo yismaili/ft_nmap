@@ -18,12 +18,15 @@
 #include <netinet/if_ether.h>
 #include <errno.h> 
 #include <sys/select.h>
+#include <netinet/udp.h>
+#include <netinet/ip_icmp.h>
 
 #define SYN_SCAN  0
 #define FIN_SCAN  1
 #define NULL_SCAN 2
 #define XMAS_SCAN 3
 #define ACK_SCAN  4
+#define UDP_SCAN  5
 
 typedef struct {
     char service_name[1024];
@@ -58,7 +61,6 @@ struct pseudo_header {
     unsigned char placeholder;
     unsigned char protocol;
     unsigned short tcp_length;
-
     struct tcphdr tcp;
 };
 
@@ -68,8 +70,9 @@ void* start_packet_sniffer(void* ptr);
 void retrieve_source_ip_address(t_context *ctx);
 int init_row_socket(t_context *ctx);
 void execute_network_scan(t_context *ctx, const char* target, int scan_type);
-void send_tcp_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
 void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type);
+void craft_udp_packet(t_context *ctx, char *buffer_packet, const char *source_ip, struct iphdr *iph, int port);
+void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes);
 void scan_port(t_context *ctx, char *ip_addr);
 void cleanup_scanner(t_context *ctx);

@@ -48,4 +48,4 @@ cat /proc/sys/kernel/threads-max
 * UDP
 * enthr_interfice
 * filterd / open/ close
-* cleanup_scanner 
+* cleanup_scanner | ok

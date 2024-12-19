@@ -58,6 +58,34 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
     struct ethhdr *ethhdr = (struct ethhdr*)packet;
     t_context *ctx = (t_context *)user;
     struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
+    
+    // Handle UDP scan responses (ICMP port unreachable means port is closed)
+    if (iph->protocol == IPPROTO_ICMP) 
+    {
+        struct icmphdr *icmph = (struct icmphdr*)((u_char*)iph + (iph->ihl * 4));
+        if (icmph->type == ICMP_DEST_UNREACH && icmph->code == ICMP_PORT_UNREACH)
+        {
+            // Extract original UDP packet from ICMP payload
+            struct iphdr *orig_iph = (struct iphdr*)(((u_char*)icmph) + sizeof(struct icmphdr));
+            struct udphdr *orig_udph = (struct udphdr*)((u_char*)orig_iph + (orig_iph->ihl * 4));
+            
+            uint16_t port = ntohs(orig_udph->dest);
+            int result_idx = -1;
+            for (int i = 0; i < ctx->config->port_count; i++) {
+                if (ctx->config->ports[i] == port) {
+                    result_idx = i;
+                    break;
+                }
+            }
+            
+            if (result_idx != -1) {
+                ctx->results[result_idx].is_open = false;
+                ctx->results[result_idx].scan_type = 5; // UDP scan
+            }
+        }
+    }
+    
+    // Existing TCP handling code...
     if (iph->protocol == IPPROTO_TCP) 
     {
         int ip_header_len = iph->ihl * 4;
@@ -139,7 +167,7 @@ void *start_packet_sniffer(void* ptr)
         return NULL;
     }
 
-    snprintf(filter_exp, sizeof(filter_exp), "tcp and src host %s", inet_ntoa(ctx->dest_ip));
+    snprintf(filter_exp, sizeof(filter_exp), "(tcp or icmp) and src host %s", inet_ntoa(ctx->dest_ip));
     if (pcap_compile(ctx->handle, &fp_bpf, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) 
     {
         fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(ctx->handle));
