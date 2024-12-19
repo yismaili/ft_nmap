@@ -27,9 +27,7 @@ char *detect_service_version(const char *ip_address, int port, int config_timeou
 
   if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
     close(sockfd);
-    char error_msg[256];
-    snprintf(error_msg, sizeof(error_msg), "Connection failed: %s", strerror(errno));
-    return strdup(error_msg);
+    return strdup("Unknown");
   }
 
   const char *probes[] = {
@@ -48,9 +46,7 @@ char *detect_service_version(const char *ip_address, int port, int config_timeou
 
       if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         close(sockfd);
-        char error_msg[256];
-        snprintf(error_msg, sizeof(error_msg), "Connection failed: %s", strerror(errno));
-        return strdup(error_msg);
+        return strdup("Unknown");
       }
 
       if (send(sockfd, probes[i], strlen(probes[i]), 0) < 0) {
@@ -92,15 +88,10 @@ char *detect_service_version(const char *ip_address, int port, int config_timeou
                   return strdup(version_buffer);
               }
           } else {
-              char *end = strchr(buffer, '\r');
-              if (end)
-                  *end = '\0';
-              char response[BUFFER_SIZE];
-              snprintf(response, sizeof(response), "Unknown protocol: %.242s", buffer);
-              return strdup(response);
+              return strdup("Unknown");
           }
       }
   }
 
-  return strdup("No response received");
+  return strdup("Unknown");
 }

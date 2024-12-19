@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "shell", inline: <<-SHELL
 		apt-get update -y
-		apt-get install -y apt-utils clang make binutils git gcc inetutils-traceroute vim tcpdump nmap libpcap-dev net-tools
+		apt-get install -y apt-utils clang make binutils git gcc inetutils-traceroute vim tcpdump nmap libpcap-dev net-tools valgrind
 	SHELL
 
 end

@@ -30,9 +30,13 @@ typedef struct {
 } OSFingerprint;
 
 OSFingerprint os_signatures[] = {
-    {"Linux 2.6.x", 64, 5840, 1},   {"Windows 10/11", 128, 64240, 2},
-    {"macOS Sonoma", 64, 65535, 3}, {"FreeBSD 13.x", 64, 65535, 4},
-    {"OpenBSD 7.x", 64, 16384, 5},
+	{"Linux 2.6.x", 64, 5840, 1},
+  {"Linux 3.x/4.x", 64, 29200, 1},
+  {"Linux 5.x", 64, 65535, 1},
+  {"Windows 10/11", 128, 64240, 2},
+	{"macOS Sonoma", 64, 65535, 3},
+	{"FreeBSD 13.x", 64, 65535, 4},
+	{"OpenBSD 7.x", 64, 16384, 5}
 };
 
 const char *detect_os(const char *target, int config_timeout) {
@@ -69,6 +73,7 @@ const char *detect_os(const char *target, int config_timeout) {
 
   int sock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
   if (sock < 0) {
+    freeifaddrs(ifaddr);
     perror("Socket creation failed");
     return "Unknown";
   }
@@ -184,8 +189,10 @@ const char *detect_os(const char *target, int config_timeout) {
   }
 
   if (best_match_score >= 4 && best_match_index >= 0) {
+    freeifaddrs(ifaddr);
     return os_signatures[best_match_index].name;
   }
 
+  freeifaddrs(ifaddr);
   return "Unknown OS";
 }
