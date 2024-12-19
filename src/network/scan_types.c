@@ -51,13 +51,11 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
         exit(2);
     }
 
-    if (scan_type == 5) { // UDP scan
+    if (scan_type == 5) {
         while (i < ctx->config->port_count) {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
-
             craft_udp_packet(ctx, buffer_packet, ctx->source_ip, iph, port);
-
             dest.sin_family = AF_INET;
             dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
 
@@ -71,7 +69,6 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
     } else {
         struct tcphdr* tcph = (struct tcphdr*)(buffer_packet + sizeof(struct ip));
         craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type);
-
         while (i < ctx->config->port_count) 
         {
             int port = ctx->config->ports[i];
@@ -82,17 +79,6 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
             dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
             tcph->dest = htons(port);
             tcph->check = 0;
-
-            // psh.source_address = inet_addr(ctx->source_ip);
-            // psh.dest_address = dest.sin_addr.s_addr;
-            // psh.placeholder = 0;
-            // psh.protocol = IPPROTO_TCP;
-            // psh.tcp_length = htons(sizeof(struct tcphdr));
-
-            // memcpy(&psh.tcp, tcph, sizeof(struct tcphdr));
-
-            // tcph->check = calculate_ip_tcp_checksum((unsigned short*)&psh, sizeof(struct pseudo_header));
-
             if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct tcphdr),
                 0, (struct sockaddr*)&dest, sizeof(dest)) < 0){
                 printf("Error sending syn packet.");
@@ -182,30 +168,6 @@ void craft_udp_packet(t_context *ctx, char* buffer_packet, const char* source_ip
     udph->dest = htons(port);
     udph->len = htons(sizeof(struct udphdr));
     udph->check = 0;
-
     iph->check = calculate_ip_tcp_checksum((unsigned short*)buffer_packet, iph->tot_len >> 1);
-    
-    // struct pseudo_header_udp {
-    //     uint32_t source_addr;
-    //     uint32_t dest_addr;
-    //     uint8_t placeholder;
-    //     uint8_t protocol;
-    //     uint16_t udp_length;
-    // } psh;
-
-    // psh.source_addr = inet_addr(source_ip);
-    // psh.dest_addr = ctx->dest_ip.s_addr;
-    // psh.placeholder = 0;
-    // psh.protocol = IPPROTO_UDP;
-    // psh.udp_length = htons(sizeof(struct udphdr));
-
-    // int psize = sizeof(struct pseudo_header_udp) + sizeof(struct udphdr);
-    // char *pseudogram = malloc(psize);
-    
-    // memcpy(pseudogram, &psh, sizeof(struct pseudo_header_udp));
-    // memcpy(pseudogram + sizeof(struct pseudo_header_udp), udph, sizeof(struct udphdr));
-    
-    // udph->check = calculate_ip_tcp_checksum((unsigned short*)pseudogram, psize);
-    // free(pseudogram);
 }
 
