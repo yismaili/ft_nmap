@@ -137,7 +137,7 @@ int start_packet_sniffer(t_context *ctx)
     }
 
     if (FD_ISSET(fd, &read_fds)) {
-        pcap_loop(ctx->handle, 2, packet_handler, (u_char*)ctx);
+        pcap_loop(ctx->handle, ctx->config->port_count, packet_handler, (u_char*)ctx);
     }
     
     pcap_freecode(&fp);
