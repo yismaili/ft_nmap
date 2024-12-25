@@ -1,6 +1,6 @@
 #include "../../includes/scanner.h"
 
-unsigned short calculate_checksum(unsigned short *addr, int len) {
+unsigned short ip_checksum(unsigned short *addr, int len) {
   int nleft = len;
   int sum = 0;
   unsigned short *w = addr;
@@ -20,6 +20,45 @@ unsigned short calculate_checksum(unsigned short *addr, int len) {
   sum += (sum >> 16);
   answer = ~sum;
   return answer;
+}
+
+unsigned short tcp_checksum(const void *buf, unsigned int len, in_addr_t src_addr, in_addr_t dest_addr) {
+    const unsigned short *buffer = buf;
+    unsigned int sum = 0;
+    unsigned short result;
+
+    struct {
+        in_addr_t src;
+        in_addr_t dst;
+        unsigned char zero;
+        unsigned char protocol;
+        unsigned short tcp_length;
+    } pseudo_header;
+
+    pseudo_header.src = src_addr;
+    pseudo_header.dst = dest_addr;
+    pseudo_header.zero = 0;
+    pseudo_header.protocol = IPPROTO_TCP;
+    pseudo_header.tcp_length = htons(len);
+
+    const unsigned short *ph = (unsigned short *)&pseudo_header;
+    for (int i = 0; i < sizeof(pseudo_header) / 2; i++) {
+        sum += *ph++;
+    }
+
+    for (unsigned int i = 0; i < len / 2; i++) {
+        sum += *buffer++;
+    }
+
+    if (len % 2) {
+        sum += *((unsigned char*)buffer);
+    }
+
+    while (sum >> 16) {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+    result = ~sum;
+    return result;
 }
 
 typedef struct {
@@ -123,7 +162,8 @@ const char *detect_os(const char *target, int config_timeout) {
   ip->saddr = inet_addr(source_ip);
   ip->daddr = dest.sin_addr.s_addr;
 
-  tcp->source = htons(12345);
+  srand(time(NULL));
+  tcp->source = htons(1024 + rand() % (65535 - 1024));
   tcp->dest = htons(80);
   tcp->seq = htonl(rand());
   tcp->ack_seq = 0;
@@ -133,7 +173,8 @@ const char *detect_os(const char *target, int config_timeout) {
   tcp->check = 0;
   tcp->urg_ptr = 0;
 
-  ip->check = calculate_checksum((unsigned short *)packet, ip->ihl * 4);
+  ip->check = ip_checksum((unsigned short *)packet, ip->ihl * 4);
+  tcp->check = tcp_checksum(tcp, sizeof(struct tcphdr), ip->saddr, ip->daddr);
 
   struct {
     int ttl;
