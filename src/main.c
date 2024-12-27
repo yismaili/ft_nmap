@@ -101,6 +101,11 @@ int main(int argc, char **argv)
         context.results[i].scan_type = -1;
         context.results[i].service_name[0] = '\0';
 				context.results[i].service_version[0] = '\0';
+        if (config.scan_types.udp) {
+            context.results[i].state = PORT_STATE_OPEN_FILTERED;
+        } else {
+            context.results[i].state = PORT_STATE_UNKNOWN;
+        }
     }
 
     retrieve_local_ip_address(&context);

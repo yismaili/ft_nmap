@@ -1,20 +1,42 @@
 #include "../includes/scanner.h"
 
 void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_in_addr, int port) {
+  if (scan_type == UDP_SCAN) {
+    int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sockfd < 0) {
+      perror("UDP socket creation failed");
+      return;
+    }
+
+    struct sockaddr_in dest;
+    memset(&dest, 0, sizeof(dest));
+    dest.sin_family = AF_INET;
+    dest.sin_addr.s_addr = target_in_addr->s_addr;
+    dest.sin_port = htons(port);
+
+    char buffer[1] = {0};
+    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0) {
+      perror("Error sending UDP packet");
+      close(sockfd);
+      return;
+    }
+
+    close(sockfd);
+  } else {
     char datagram[4096] = {0};
     struct iphdr* iph = (struct iphdr*)datagram;
     struct tcphdr* tcph = (struct tcphdr*)(datagram + sizeof(struct ip));
 
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
     if (ctx->dest_ip.s_addr == INADDR_NONE) {
-        fprintf(stderr, "Invalid address\n");
-        return;
+      fprintf(stderr, "Invalid address\n");
+      return;
     }
 
     craft_tcp_packet(ctx, datagram, ctx->local_ip, iph, tcph, scan_type);
 
     struct sockaddr_in dest;
-		memset(&dest, 0, sizeof(dest)); 
+    memset(&dest, 0, sizeof(dest)); 
     struct pseudo_header psh;
 
     dest.sin_family = AF_INET;
@@ -33,8 +55,19 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
 
     if (sendto(ctx->raw_socket, datagram, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, 
                (struct sockaddr*)&dest, sizeof(dest)) < 0) {
-        perror("Error sending SYN packet");
+      perror("Error sending SYN packet");
     }
+  }
+  int result_idx = -1;
+  for (int i = 0; i < ctx->config->port_count; i++) {
+    if (ctx->config->ports[i] == port) {
+      result_idx = i;
+      break;
+    }
+  }
+  if (result_idx == -1)
+    return;
+  ctx->results[result_idx].scan_type = scan_type;
 }
 
 void scan_port_thread(t_context *ctx, char *ip_addr, int port) {
@@ -61,7 +94,7 @@ void scan_port_thread(t_context *ctx, char *ip_addr, int port) {
         perform_scan_thread(ctx, XMAS_SCAN, &target_in_addr, port);
     }
     if (ctx->config->scan_types.udp) {
-        perform_scan_thread(ctx, 0, &target_in_addr, port);
+        perform_scan_thread(ctx, UDP_SCAN, &target_in_addr, port);
     }
 }
 

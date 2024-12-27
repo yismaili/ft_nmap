@@ -87,6 +87,7 @@ void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr*
 						cleanup_program(ctx->config, ctx);
 						exit(2);
         }
+        ctx->results[i].scan_type = scan_type;
         i++;
     }
 }
