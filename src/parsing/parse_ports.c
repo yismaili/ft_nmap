@@ -10,7 +10,7 @@ bool parse_ports(char *ports, t_scan_config *config) {
     ptr++;
   }
 
-  char seen_ports[128] = {0};
+  char seen_ports[65536 / 8] = {0};
   int port_count = 0;
   int *port_array = malloc(sizeof(int) * 1024);
 
@@ -33,9 +33,9 @@ bool parse_ports(char *ports, t_scan_config *config) {
         return (false);
       }
 
-      if (start_port <= 0 || start_port > 1024 || end_port <= 0 ||
-          end_port > 1024) {
-        fprintf(stderr, "Ports must be between 1 and 1024\n");
+      if (start_port <= 0 || start_port > 65535 || end_port <= 0 ||
+          end_port > 65535) {
+        fprintf(stderr, "Ports must be between 1 and 65535\n");
         free(port_array);
         return (false);
       }
@@ -46,16 +46,16 @@ bool parse_ports(char *ports, t_scan_config *config) {
         return (false);
       }
 
-      for (int i = start_port; i <= end_port; i++) {
+      for (int i = start_port; i <= end_port && port_count < 1024; i++) {
         if (!(seen_ports[i / 8] & (1 << (i % 8)))) {
           seen_ports[i / 8] |= (1 << (i % 8));
-          if (port_count >= 1024) {
-            fprintf(stderr, "Too many ports specified\n");
-            free(port_array);
-            return (false);
-          }
           port_array[port_count++] = i;
         }
+      }
+
+      if (port_count >= 1024) {
+        fprintf(stderr, "Warning: Port limit of 1024 reached. Some ports were omitted.\n");
+        break;
       }
     } else {
       matched = sscanf(token, "%d%s", &start_port, extra_chars);
@@ -65,19 +65,19 @@ bool parse_ports(char *ports, t_scan_config *config) {
         return (false);
       }
 
-      if (start_port <= 0 || start_port > 1024) {
-        fprintf(stderr, "Ports must be between 1 and 1024\n");
+      if (start_port <= 0 || start_port > 65535) {
+        fprintf(stderr, "Ports must be between 1 and 65535\n");
         free(port_array);
         return (false);
       }
 
+      if (port_count >= 1024) {
+        fprintf(stderr, "Warning: Port limit of 1024 reached. Some ports were omitted.\n");
+        break;
+      }
+
       if (!(seen_ports[start_port / 8] & (1 << (start_port % 8)))) {
         seen_ports[start_port / 8] |= (1 << (start_port % 8));
-        if (port_count >= 1024) {
-          fprintf(stderr, "Too many ports specified\n");
-          free(port_array);
-          return (false);
-        }
         port_array[port_count++] = start_port;
       }
     }

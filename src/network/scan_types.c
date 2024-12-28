@@ -33,6 +33,7 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
     if (pthread_create(&sniffer_thread, NULL, capture_syn_ack_response, ctx) < 0)
     {
         printf("Could not create sniffer thread");
+				cleanup_program(ctx->config, ctx);
         exit(2);
     }
     get_source_network_interface(ctx, scan_type, &target_in_addr);
@@ -51,7 +52,8 @@ void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr*
     if (ctx->dest_ip.s_addr == -1)
     {
         printf("Invalid address\n");
-        exit(2);
+				cleanup_program(ctx->config, ctx);
+				exit(2);
     }
 
     craft_tcp_packet(ctx, datagram, ctx->local_ip, iph, tcph, scan_type);
@@ -62,8 +64,11 @@ void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr*
         struct sockaddr_in dest;
         struct pseudo_header psh;
 
+        memset(&dest, 0, sizeof(dest));
         dest.sin_family = AF_INET;
+        dest.sin_port = htons(port);
         dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
+
         tcph->dest = htons(port);
         tcph->check = 0;
 
@@ -79,8 +84,10 @@ void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr*
 
         if (sendto(ctx->raw_socket, datagram, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0){
             printf("Error sending syn packet.");
-            exit(2);
+						cleanup_program(ctx->config, ctx);
+						exit(2);
         }
+        ctx->results[i].scan_type = scan_type;
         i++;
     }
 }
@@ -99,7 +106,17 @@ void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, stru
     iph->ttl = 64;
     iph->protocol = IPPROTO_TCP;
     iph->check = 0;
-    iph->saddr = inet_addr(source_ip);
+		if (ctx->config->hide_source_ip) {
+			char *random_ip = generate_random_ip();
+			iph->saddr = inet_addr(random_ip);
+			free(random_ip);
+		} else {
+			iph->saddr = inet_addr(source_ip);
+		}
+		if (ctx->config->bypass_ids) {
+			iph->ttl = 128;
+			tcph->th_sport = htons(rand() % 65535);
+		}
     iph->daddr = ctx->dest_ip.s_addr;
     iph->check = calculate_ip_tcp_checksum((unsigned short*)datagram, iph->tot_len >> 1);
 

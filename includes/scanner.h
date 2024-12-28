@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <pcap.h>
+#include <ifaddrs.h>
 #include "../includes/ft_nmap.h"
 #include <limits.h>
 #include <math.h>
@@ -18,16 +19,28 @@
 #include <netinet/if_ether.h>
 #include <errno.h> 
 #include <sys/select.h>
+#include <netinet/udp.h>
+#include <netinet/ip_icmp.h>
+
+#define PORT_STATE_OPEN 1
+#define PORT_STATE_CLOSED 2
+#define PORT_STATE_FILTERED 3
+#define PORT_STATE_OPEN_FILTERED 4
+#define PORT_STATE_UNFILTERED 5
+#define PORT_STATE_UNKNOWN 0
 
 #define SYN_SCAN  0
 #define FIN_SCAN  1
 #define NULL_SCAN 2
 #define XMAS_SCAN 3
 #define ACK_SCAN  4
+#define UDP_SCAN  5
 
 typedef struct {
     char service_name[1024];
+		char service_version[1024];
     int port;
+    int state;
     bool is_open;
     int scan_type;
 } t_result;
@@ -78,4 +91,7 @@ const char* format_ipv4_address_to_string(const struct in_addr* addr);
 void* thread_scan_ports(void *arg);
 void print_scan_results(t_context *ctx, const char* target_ip);
 void start_threaded_scan(t_context *ctx, char *target_ip);
+const char *detect_os(const char *target, int config_timeout);
+char *detect_service_version(const char *ip_address, int port, int config_timeout);
+void cleanup_program(t_scan_config *config, t_context *context);
 #endif
