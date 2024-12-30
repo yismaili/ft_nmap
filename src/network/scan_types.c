@@ -51,7 +51,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
         exit(2);
     }
 
-    if (scan_type == 5) {
+    if (scan_type == UDP_SCAN) {
         while (i < ctx->config->port_count) {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
@@ -142,11 +142,11 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
             tcph->psh = 1;
             tcph->urg = 1;
             break;
-        case 5: // UDP scan
+        case 5:
             break;
-        default:
-            tcph->syn = 1;
-            break;
+        // default:
+        //     tcph->syn = 1;
+        //     break;
     }
 }
 

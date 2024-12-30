@@ -64,12 +64,12 @@ void cleanup_scanner(t_context *ctx)
 void print_scan_results(t_context *ctx, const char* target_ip) 
 {
     printf("\nScan Results for IP: %s\n", target_ip);
-    printf("============================================================\n");
+    printf("=================================================================\n");
 
     // Print header with proper column alignment
-    printf("%-6s %-20s %-15s %-10s\n", 
-           "PORT", "SERVICE", "STATE", "RESPONSE TIME");
-    printf("------------------------------------------------------------\n");
+    printf("%-6s %-20s %-10s %-15s %-10s\n", 
+           "PORT", "SERVICE", "STATE", "SCAN TYPE", "TIME");
+    printf("-----------------------------------------------------------------\n");
 
     bool open_ports_found = false;
     double total_time = 0;
@@ -79,69 +79,64 @@ void print_scan_results(t_context *ctx, const char* target_ip)
         int port = ctx->config->ports[i];
         t_result* result = &ctx->results[i];
         
+        char port_str[32];
+        snprintf(port_str, sizeof(port_str), "%d", port);
+
+        char service_str[21];
+        snprintf(service_str, sizeof(service_str), "%s", 
+                result->service_name[0] ? result->service_name : "Unknown");
+
+        const char* scan_type;
+        switch(result->scan_type) {
+            case SYN_SCAN:
+                scan_type = "SYN";
+                break;
+            case FIN_SCAN:
+                scan_type = "FIN";
+                break;
+            case NULL_SCAN:
+                scan_type = "NULL";
+                break;
+            case XMAS_SCAN:
+                scan_type = "XMAS";
+                break;
+            default:
+                scan_type = "Unknown";
+                break;
+        }
+
+        const char* state = result->is_open ? "\033[32mopen\033[0m" : "\033[31mclosed\033[0m";
+        printf("%-6s %-20s %-20s %-15s %.3fs\n",
+               port_str,
+               service_str,
+               state,
+               scan_type,
+               result->response_time);
+
         if (result->is_open) {
             open_ports_found = true;
-            
-            // Format port number
-            char port_str[32];
-            snprintf(port_str, sizeof(port_str), "%d", port);
-
-            // Format service name (truncate if too long)
-            char service_str[21];  // 20 chars + null terminator
-            snprintf(service_str, sizeof(service_str), "%s", 
-                    result->service_name[0] ? result->service_name : "Unknown");
-
-            // Format scan type
-            const char* scan_type;
-            switch(result->scan_type) {
-                case SYN_SCAN:
-                    scan_type = "SYN";
-                    break;
-                case FIN_SCAN:
-                    scan_type = "FIN";
-                    break;
-                case NULL_SCAN:
-                    scan_type = "NULL";
-                    break;
-                case XMAS_SCAN:
-                    scan_type = "XMAS";
-                    break;
-                default:
-                    scan_type = "Unknown";
-                    break;
-            }
-
-            // Print formatted line with timing
-            printf("%-6s %-20s %-15s %.3fs\n",
-                   port_str,
-                   service_str,
-                   scan_type,
-                   result->response_time);
-
-            total_time += result->response_time;
             responded_ports++;
         }
+        total_time += result->response_time;
     }
 
-    printf("------------------------------------------------------------\n");
+    printf("-----------------------------------------------------------------\n");
 
-    if (!open_ports_found) {
-        printf("No open ports found.\n");
-    } else {
-        ctx->total_open_host++;
-        
-        // Print timing statistics
-        printf("\nTiming Statistics:\n");
-        printf("Total Scan Time: %.3f seconds\n", total_time);
-        if (responded_ports > 0) {
-            printf("Average Response Time: %.3f seconds\n", total_time / responded_ports);
-        }
+    printf("\nTiming Statistics:\n");
+    printf("Total Scan Time: %.3f seconds\n", total_time);
+    if (ctx->config->port_count > 0) {
+        printf("Average Response Time: %.3f seconds\n", total_time / ctx->config->port_count);
     }
 
     // Print summary
     printf("\nScan Summary:\n");
     printf("- Ports scanned: %d\n", ctx->config->port_count);
-    printf("- Open ports found: %d\n", responded_ports);
-    printf("============================================================\n\n");
-}
+    printf("- Open ports: %d\n", responded_ports);
+    printf("- Closed ports: %d\n", ctx->config->port_count - responded_ports);
 
+    if (open_ports_found) {
+        ctx->total_open_host++;
+    }
+
+    printf("=================================================================\n\n");
+}

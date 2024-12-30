@@ -75,6 +75,7 @@ void* thread_scan_ports(void *arg) {
     }
     for (int i = thread_data->start_port_index; i < thread_data->end_port_index; i++) 
     {
+        start_port_timing(&ctx->results[i]);
         scan_port_thread(ctx, ctx->config->target_ips[0], ctx->config->ports[i]);
     }
 
