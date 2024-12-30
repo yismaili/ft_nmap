@@ -104,14 +104,16 @@ void print_scan_results(t_context *ctx, const char* target_ip)
                 scan_type = "Unknown";
                 break;
         }
-
-        const char* state = result->is_open ? "\033[32mopen\033[0m" : "\033[31mclosed\033[0m";
-        printf("%-6s %-20s %-20s %-15s %.3fs\n",
-               port_str,
-               service_str,
-               state,
-               scan_type,
-               result->response_time);
+        if ((ctx->config->port_count == 1024 && result->is_open == true)||(ctx->config->port_count != 1024 && result->is_open != true) || (ctx->config->port_count != 1024 && result->is_open == true))
+        {
+            const char* state = result->is_open ? "\033[32mopen\033[0m" : "\033[31mclosed\033[0m";
+            printf("%-6s %-20s %-20s %-15s %.3fs\n",
+                port_str,
+                service_str,
+                state,
+                scan_type,
+                result->response_time);
+        }
 
         if (result->is_open) {
             open_ports_found = true;
