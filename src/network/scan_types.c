@@ -33,6 +33,7 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
     if (pthread_create(&sniffer_thread, NULL, start_packet_sniffer, ctx) < 0)
     {
         printf("Could not create sniffer thread");
+				cleanup_program(ctx->config, ctx);
         exit(2);
     }
     send_scan_packets(ctx, scan_type, &target_in_addr);
@@ -48,9 +49,9 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
     if (ctx->dest_ip.s_addr == -1) {
         printf("Invalid address\n");
-        exit(2);
+				cleanup_program(ctx->config, ctx);
+				exit(2);
     }
-
     if (scan_type == 5) {
         while (i < ctx->config->port_count) {
             int port = ctx->config->ports[i];
@@ -103,7 +104,17 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     iph->ttl = 64;
     iph->protocol = IPPROTO_TCP;
     iph->check = 0;
-    iph->saddr = inet_addr(source_ip);
+		if (ctx->config->hide_source_ip) {
+			char *random_ip = generate_random_ip();
+			iph->saddr = inet_addr(random_ip);
+			free(random_ip);
+		} else {
+			iph->saddr = inet_addr(source_ip);
+		}
+		if (ctx->config->bypass_ids) {
+			iph->ttl = 128;
+			tcph->th_sport = htons(rand() % 65535);
+		}
     iph->daddr = ctx->dest_ip.s_addr;
     iph->check = calculate_ip_tcp_checksum((unsigned short*)buffer_packet, iph->tot_len >> 1);
 

@@ -49,3 +49,10 @@ cat /proc/sys/kernel/threads-max
 * enthr_interfice
 * filterd / open/ close
 * cleanup_scanner | ok
+
+# Bugs to fix:
+# scanning localhost
+# show results of all scan types (syn, ack, etc)
+# show the approprite state of scans (open, filtered, closed)
+# make --hide-ip work on a virtual machine (just bonus, can be skipped)
+

@@ -44,6 +44,8 @@ void scan_port(t_context *ctx, char *ip_addr)
 
 void cleanup_scanner(t_context *ctx) 
 {
+		if (!ctx) return;
+
     if (ctx->mutex_lock) {
         pthread_mutex_destroy(ctx->mutex_lock);
         free(ctx->mutex_lock);
@@ -59,41 +61,111 @@ void cleanup_scanner(t_context *ctx)
         close(ctx->raw_socket);
         ctx->raw_socket = -1;
     }
+
+    if (ctx->results) {
+        free(ctx->results);
+        ctx->results = NULL;
+    }
 }
 
 void print_scan_results(t_context *ctx, const char* target_ip) 
 {
     printf("\nScan Results for IP: %s\n", target_ip);
-    printf("------------------------------\n");
+    printf("------------------------------------\n");
 
     printf("Open Ports:\n");
-    printf("Port\tService\t\tScan Results\n");
-    printf("----------------------------------------\n");
+    if (ctx->config->version_detection) {
+        printf("Port\tService\t\tScan Type\t\tState\t\tVersion\n");
+        printf("----------------------------------------------------------------------------\n");
+    } else {
+        printf("Port\tService\t\tScan Type\t\tState\n");
+        printf("------------------------------------------------------------\n");
+    }
 
     bool open_ports_found = false;
 
     for (int i = 0; i < ctx->config->port_count; i++) {
         int port = ctx->config->ports[i];
         t_result* result = &ctx->results[i];
-        if (result->is_open) {
+        if (result->state == PORT_STATE_OPEN || result->state == PORT_STATE_OPEN_FILTERED) {
             open_ports_found = true;
-            printf("%d\t%s\t\t", port,result->service_name[0] ? result->service_name : "Unknown");
+            const char *protocol = NULL;
             switch(result->scan_type) {
                 case SYN_SCAN:
-                    printf("SYN(Open)");
-                    break;
                 case FIN_SCAN:
-                    printf("FIN(Open)");
-                    break;
                 case NULL_SCAN:
-                    printf("NULL(Open)");
-                    break;
                 case XMAS_SCAN:
-                    printf("XMAS(Open)");
+                    protocol = "tcp";
+                    break;
+                case UDP_SCAN:
+                    protocol = "udp";
                     break;
                 default:
-                    printf("Open");
+                    protocol = NULL;
                     break;
+            }
+            const char *service_name = NULL;
+            if (result->service_name[0] != '\0') {
+                service_name = result->service_name;
+            } else if (protocol != NULL) {
+                struct servent *service = getservbyport(htons(port), protocol);
+                if (service) {
+                    service_name = service->s_name;
+                } else {
+                    service_name = "Unknown";
+                }
+            } else {
+                service_name = "Unknown";
+            }
+
+            printf("%d\t%s\t\t", port, service_name);
+            
+            switch(result->scan_type) {
+                case SYN_SCAN:
+                    printf("SYN");
+                    break;
+                case FIN_SCAN:
+                    printf("FIN");
+                    break;
+                case NULL_SCAN:
+                    printf("NULL");
+                    break;
+                case XMAS_SCAN:
+                    printf("XMAS");
+                    break;
+                case UDP_SCAN:
+                    printf("UDP");
+                    break;
+                default:
+                    break;
+            }
+            
+          switch(result->state) {
+            case PORT_STATE_OPEN:
+                printf("\t\t\tOpen");
+                break;
+            case PORT_STATE_CLOSED:
+                printf("\t\t\tClosed");
+                break;
+            case PORT_STATE_FILTERED:
+                printf("\t\t\tFiltered");
+                break;
+            case PORT_STATE_OPEN_FILTERED:
+                printf("\t\t\tOpen Filtered");
+                break;
+            case PORT_STATE_UNFILTERED:
+                printf("\t\t\tUnfiltered");
+                break;
+            default:
+                break;
+        }
+
+						if (ctx->config->version_detection) {
+                printf("\t\t%s\t\t", 
+                        result->service_version[0] ?
+											  result->service_version :
+											  "Unknown"
+											);
             }
             printf("\n");
         }
