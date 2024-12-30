@@ -46,7 +46,7 @@ typedef struct {
 } t_result;
 
 typedef struct {
-    char local_ip[INET6_ADDRSTRLEN];
+    char source_ip[INET6_ADDRSTRLEN];
     struct in_addr dest_ip;
     int total_open_host;
     struct timespec start_time, finish_time;
@@ -71,19 +71,18 @@ struct pseudo_header {
     unsigned char placeholder;
     unsigned char protocol;
     unsigned short tcp_length;
-
     struct tcphdr tcp;
 };
 
 void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet);
-int start_packet_sniffer(t_context *ctx);
-void* capture_syn_ack_response(void* ptr);
-void retrieve_local_ip_address(t_context *ctx);
+void* start_packet_sniffer(void* ptr);
+// void* capture_syn_ack_response(void* ptr);
+void retrieve_source_ip_address(t_context *ctx);
 int init_row_socket(t_context *ctx);
 void execute_network_scan(t_context *ctx, const char* target, int scan_type);
-void get_source_network_interface(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
 void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type);
-void resolve_ip_to_hostname(const char* ip, char* buffer);
+void craft_udp_packet(t_context *ctx, char *buffer_packet, const char *source_ip, struct iphdr *iph, int port);
+void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes);
 void scan_port(t_context *ctx, char *ip_addr);
 void cleanup_scanner(t_context *ctx);

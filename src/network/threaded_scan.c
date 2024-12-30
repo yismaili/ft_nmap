@@ -33,7 +33,7 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
       return;
     }
 
-    craft_tcp_packet(ctx, datagram, ctx->local_ip, iph, tcph, scan_type);
+    craft_tcp_packet(ctx, datagram, ctx->source_ip, iph, tcph, scan_type);
 
     struct sockaddr_in dest;
     memset(&dest, 0, sizeof(dest)); 
@@ -44,7 +44,7 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
     tcph->dest = htons(port);
     tcph->check = 0;
 
-    psh.source_address = inet_addr(ctx->local_ip);
+    psh.source_address = inet_addr(ctx->source_ip);
     psh.dest_address = dest.sin_addr.s_addr;
     psh.placeholder = 0;
     psh.protocol = IPPROTO_TCP;
@@ -103,7 +103,7 @@ void* thread_scan_ports(void *arg) {
     t_context *ctx = thread_data->ctx;
 
     pthread_t sniffer_thread;
-    if (pthread_create(&sniffer_thread, NULL, capture_syn_ack_response, ctx) != 0) {
+    if (pthread_create(&sniffer_thread, NULL, start_packet_sniffer, ctx) != 0) {
         perror("Could not create sniffer thread");
         return NULL;
     }

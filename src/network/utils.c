@@ -1,18 +1,5 @@
 #include "../../includes/scanner.h"
 
-void resolve_ip_to_hostname(const char* ip, char* buffer)
-{
-    struct sockaddr_in dest;
-
-    memset(&dest, 0, sizeof(dest));
-    dest.sin_family = AF_INET;
-    dest.sin_addr.s_addr = inet_addr(ip);
-    dest.sin_port = 0;
-
-    if (getnameinfo((struct sockaddr*)&dest, sizeof(dest), buffer, NI_MAXHOST, NULL, 0, NI_NAMEREQD) != 0)
-        strcpy(buffer, "Hostname can't be determined");
-}
-
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes)
 {
     register long sum;
@@ -40,27 +27,18 @@ unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes)
 
 void scan_port(t_context *ctx, char *ip_addr) 
 {
-    if (ctx->config->scan_types.syn){
-        execute_network_scan(ctx, ip_addr, SYN_SCAN);
-    }  
+    if (ctx->config->scan_types.syn)
+        execute_network_scan(ctx, ip_addr, SYN_SCAN); 
     if (ctx->config->scan_types.null)
-    {
         execute_network_scan(ctx, ip_addr, NULL_SCAN);
-    }
-    if (ctx->config->scan_types.ack){
+    if (ctx->config->scan_types.ack)
         execute_network_scan(ctx, ip_addr, ACK_SCAN);
-    }
     if (ctx->config->scan_types.fin)
-    {
         execute_network_scan(ctx, ip_addr, FIN_SCAN);
-    }
     if (ctx->config->scan_types.xmas)
-    {
         execute_network_scan(ctx, ip_addr, XMAS_SCAN);
-    }
-    if (ctx->config->scan_types.udp){
+    if (ctx->config->scan_types.udp)
         execute_network_scan(ctx, ip_addr, UDP_SCAN);
-    }
     print_scan_results(ctx, ip_addr);    
 }
 
@@ -195,5 +173,7 @@ void print_scan_results(t_context *ctx, const char* target_ip)
 
     if (!open_ports_found) {
         printf("No open ports found.\n");
+    } else {
+        ctx->total_open_host++;
     }
 }
