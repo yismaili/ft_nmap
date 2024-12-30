@@ -96,13 +96,11 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
             
             if (result_idx != -1) {
                 ctx->results[result_idx].is_open = false;
-                ctx->results[result_idx].scan_type = 5;
                 end_port_timing(&ctx->results[result_idx]);
             }
         }
     }
     
-    // Existing TCP handling code...
     if (iph->protocol == IPPROTO_TCP) 
     {
         int ip_header_len = iph->ihl * 4;
@@ -135,16 +133,12 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
                 end_port_timing(&ctx->results[result_idx]);
             } else if (tcph->rst == 1) 
             {
-                if (ctx->results[result_idx].scan_type == FIN_SCAN || ctx->results[result_idx].scan_type == NULL_SCAN ||
-                    ctx->results[result_idx].scan_type == XMAS_SCAN) {
-                    ctx->results[result_idx].is_open = false;
-                    end_port_timing(&ctx->results[result_idx]);
-                }
+                ctx->results[result_idx].is_open = false;
+                end_port_timing(&ctx->results[result_idx]);
             }
 
             if (scan_type != -1)
             {
-                ctx->results[result_idx].scan_type = scan_type;
                 struct servent *service = getservbyport(htons(port), "tcp");
                 if (service)
                     strncpy(ctx->results[result_idx].service_name, service->s_name, sizeof(ctx->results[result_idx].service_name) - 1);

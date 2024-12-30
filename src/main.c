@@ -72,7 +72,6 @@ int main(int argc, char **argv)
     {
         context.results[i].port = config.ports[i];
         context.results[i].is_open = false;
-        context.results[i].scan_type = -1;
         context.results[i].service_name[0] = '\0';
     }
 

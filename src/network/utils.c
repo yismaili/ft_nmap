@@ -67,8 +67,8 @@ void print_scan_results(t_context *ctx, const char* target_ip)
     printf("=================================================================\n");
 
     // Print header with proper column alignment
-    printf("%-6s %-20s %-10s %-15s %-10s\n", 
-           "PORT", "SERVICE", "STATE", "SCAN TYPE", "TIME");
+    printf("%-6s %-20s %-10s %-10s\n", 
+           "PORT", "SERVICE", "STATE","TIME");
     printf("-----------------------------------------------------------------\n");
 
     bool open_ports_found = false;
@@ -85,33 +85,13 @@ void print_scan_results(t_context *ctx, const char* target_ip)
         char service_str[21];
         snprintf(service_str, sizeof(service_str), "%s", 
                 result->service_name[0] ? result->service_name : "Unknown");
-
-        const char* scan_type;
-        switch(result->scan_type) {
-            case SYN_SCAN:
-                scan_type = "SYN";
-                break;
-            case FIN_SCAN:
-                scan_type = "FIN";
-                break;
-            case NULL_SCAN:
-                scan_type = "NULL";
-                break;
-            case XMAS_SCAN:
-                scan_type = "XMAS";
-                break;
-            default:
-                scan_type = "Unknown";
-                break;
-        }
         if ((ctx->config->port_count == 1024 && result->is_open == true)||(ctx->config->port_count != 1024 && result->is_open != true) || (ctx->config->port_count != 1024 && result->is_open == true))
         {
             const char* state = result->is_open ? "\033[32mopen\033[0m" : "\033[31mclosed\033[0m";
-            printf("%-6s %-20s %-20s %-15s %.3fs\n",
+            printf("%-6s %-20s %-19s %.3fs\n",
                 port_str,
                 service_str,
                 state,
-                scan_type,
                 result->response_time);
         }
 
@@ -129,8 +109,7 @@ void print_scan_results(t_context *ctx, const char* target_ip)
     if (ctx->config->port_count > 0) {
         printf("Average Response Time: %.3f seconds\n", total_time / ctx->config->port_count);
     }
-
-    // Print summary
+    
     printf("\nScan Summary:\n");
     printf("- Ports scanned: %d\n", ctx->config->port_count);
     printf("- Open ports: %d\n", responded_ports);

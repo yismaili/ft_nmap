@@ -32,8 +32,6 @@ typedef struct {
     char service_name[1024];
     int port;
     bool is_open;
-    int scan_type;
-    // Add timing fields
     double start_time;
     double end_time;
     double response_time;
