@@ -53,6 +53,22 @@ void print_h(struct ethhdr *ethhdr,struct iphdr *iph,  struct tcphdr *tcph)
     }
 }
 
+
+void start_port_timing(t_result *result) 
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    result->start_time = (double)ts.tv_sec + ((double)ts.tv_nsec / 1000000000.0);
+}
+
+void end_port_timing(t_result *result) 
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    result->end_time = (double)ts.tv_sec + ((double)ts.tv_nsec / 1000000000.0);
+    result->response_time = result->end_time - result->start_time;
+}
+
 void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet) 
 {
     struct ethhdr *ethhdr = (struct ethhdr*)packet;
@@ -80,7 +96,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
             
             if (result_idx != -1) {
                 ctx->results[result_idx].is_open = false;
-                ctx->results[result_idx].scan_type = 5; // UDP scan
+                ctx->results[result_idx].scan_type = 5;
+                end_port_timing(&ctx->results[result_idx]);
             }
         }
     }
@@ -115,11 +132,13 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
             {
                 scan_type = SYN_SCAN;
                 ctx->results[result_idx].is_open = true;
+                end_port_timing(&ctx->results[result_idx]);
             } else if (tcph->rst == 1) 
             {
                 if (ctx->results[result_idx].scan_type == FIN_SCAN || ctx->results[result_idx].scan_type == NULL_SCAN ||
                     ctx->results[result_idx].scan_type == XMAS_SCAN) {
                     ctx->results[result_idx].is_open = false;
+                    end_port_timing(&ctx->results[result_idx]);
                 }
             }
 
@@ -129,10 +148,6 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
                 struct servent *service = getservbyport(htons(port), "tcp");
                 if (service)
                     strncpy(ctx->results[result_idx].service_name, service->s_name, sizeof(ctx->results[result_idx].service_name) - 1);
-                
-                // char source_ip_str[INET_ADDRSTRLEN];
-                // inet_ntop(AF_INET, &(iph->saddr), source_ip_str, INET_ADDRSTRLEN);
-                // fflush(stdout);
             }
         }
     }
@@ -199,7 +214,7 @@ void *start_packet_sniffer(void* ptr)
     }
 
     if (FD_ISSET(fd, &read_fds)) {
-        pcap_loop(ctx->handle, 2, packet_handler, (u_char*)ctx);
+        pcap_loop(ctx->handle, 4, packet_handler, (u_char*)ctx);
     }
     
     pcap_freecode(&fp_bpf);
@@ -215,11 +230,3 @@ const char* format_ipv4_address_to_string(const struct in_addr* addr)
 
     return inet_ntop(AF_INET, addr, buf, sizeof buf);
 }
-
-// void* capture_syn_ack_response(void* ptr) 
-// {
-//     t_context *ctx = (t_context*)ptr;
-//     start_packet_sniffer(ctx);
-//     return NULL;
-// }
-

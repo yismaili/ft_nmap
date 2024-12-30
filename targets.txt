@@ -41,7 +41,7 @@ cat /proc/sys/kernel/threads-max
 
 
 ./ft_nmap --ip 185.203.217.46 --ports 22-25 --speedup 4
-
+./ft_nmap --ip 185.203.217.46  --speedup 4
 
 
 * localhost 

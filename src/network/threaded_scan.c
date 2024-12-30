@@ -73,8 +73,8 @@ void* thread_scan_ports(void *arg) {
         perror("Could not create sniffer thread");
         return NULL;
     }
-
-    for (int i = thread_data->start_port_index; i < thread_data->end_port_index; i++) {
+    for (int i = thread_data->start_port_index; i < thread_data->end_port_index; i++) 
+    {
         scan_port_thread(ctx, ctx->config->target_ips[0], ctx->config->ports[i]);
     }
 

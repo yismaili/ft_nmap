@@ -55,6 +55,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
         while (i < ctx->config->port_count) {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
+            start_port_timing(&ctx->results[i]);
             craft_udp_packet(ctx, buffer_packet, ctx->source_ip, iph, port);
             dest.sin_family = AF_INET;
             dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
@@ -74,6 +75,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
             struct pseudo_header psh;
+            start_port_timing(&ctx->results[i]);
 
             dest.sin_family = AF_INET;
             dest.sin_addr.s_addr = ctx->dest_ip.s_addr;

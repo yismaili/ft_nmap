@@ -68,7 +68,8 @@ int main(int argc, char **argv)
         exit(2);
     }
   
-    for (int i = 0; i < config.port_count; i++) {
+    for (int i = 0; i < config.port_count; i++) 
+    {
         context.results[i].port = config.ports[i];
         context.results[i].is_open = false;
         context.results[i].scan_type = -1;
@@ -90,18 +91,6 @@ int main(int argc, char **argv)
         start_threaded_scan(&context, config.target_ips[i]);
       i++;
     }
-    clock_gettime(CLOCK_MONOTONIC, &finish_time);
-
-    double program_duration = (finish_time.tv_sec - start_time.tv_sec);
-    program_duration += (finish_time.tv_nsec - start_time.tv_nsec) / 1000000000.0;
-
-    int hours_duration = program_duration / 3600;
-    int mins_duration = (int)(program_duration / 60) % 60;
-    double secs_duration = fmod(program_duration, 60);
-
-    printf("\nTotal active host: %d\n",context.total_open_host);
-    printf("Scan duration    : %d hour(s) %d min(s) %.05lf sec(s)\n", hours_duration, mins_duration, secs_duration);
-  
     if (context.results) {
         free(context.results);
     }

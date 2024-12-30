@@ -33,6 +33,10 @@ typedef struct {
     int port;
     bool is_open;
     int scan_type;
+    // Add timing fields
+    double start_time;
+    double end_time;
+    double response_time;
 } t_result;
 
 typedef struct {
@@ -80,4 +84,6 @@ const char* format_ipv4_address_to_string(const struct in_addr* addr);
 void* thread_scan_ports(void *arg);
 void print_scan_results(t_context *ctx, const char* target_ip);
 void start_threaded_scan(t_context *ctx, char *target_ip);
+void end_port_timing(t_result *result);
+void start_port_timing(t_result *result);
 #endif
