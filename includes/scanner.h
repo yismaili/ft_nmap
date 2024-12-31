@@ -28,10 +28,16 @@
 #define ACK_SCAN  4
 #define UDP_SCAN  5
 
+enum port_state {
+    FILTERED,
+    OPEN,
+    CLOSED
+};
+
 typedef struct {
     char service_name[1024];
     int port;
-    bool is_open;
+    enum port_state state;
     double start_time;
     double end_time;
     double response_time;

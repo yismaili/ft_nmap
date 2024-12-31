@@ -107,7 +107,6 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     iph->check = 0;
     iph->saddr = inet_addr(source_ip);
     iph->daddr = ctx->dest_ip.s_addr;
-    iph->check = calculate_ip_tcp_checksum((unsigned short*)buffer_packet, iph->tot_len >> 1);
 
     tcph->source = htons(46156);
     tcph->dest = htons(80);
@@ -126,28 +125,28 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     tcph->urg = 0;
 
     switch(scan_type) {
-        case 0: 
+        case SYN_SCAN:
             tcph->syn = 1;
             break;
-        case 1: 
-            break;
-        case 2: 
-            tcph->ack = 1;
-            break;
-        case 3:
+
+        case FIN_SCAN:
             tcph->fin = 1;
             break;
-        case 4: 
+        case NULL_SCAN:
+            break;
+
+        case XMAS_SCAN:
             tcph->fin = 1;
             tcph->psh = 1;
             tcph->urg = 1;
             break;
-        case 5:
+
+        case ACK_SCAN:
+            tcph->ack = 1;
             break;
-        // default:
-        //     tcph->syn = 1;
-        //     break;
     }
+    iph->check = calculate_ip_tcp_checksum((unsigned short*)buffer_packet, iph->tot_len >> 1);
+
 }
 
 void craft_udp_packet(t_context *ctx, char* buffer_packet, const char* source_ip, struct iphdr* iph, int port)

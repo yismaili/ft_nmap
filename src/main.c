@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < config.port_count; i++) 
     {
         context.results[i].port = config.ports[i];
-        context.results[i].is_open = false;
+        context.results[i].state = CLOSED;
         context.results[i].service_name[0] = '\0';
     }
 

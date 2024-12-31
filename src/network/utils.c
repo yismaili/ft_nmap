@@ -85,9 +85,9 @@ void print_scan_results(t_context *ctx, const char* target_ip)
         char service_str[21];
         snprintf(service_str, sizeof(service_str), "%s", 
                 result->service_name[0] ? result->service_name : "Unknown");
-        if ((ctx->config->port_count == 1024 && result->is_open == true)||(ctx->config->port_count != 1024 && result->is_open != true) || (ctx->config->port_count != 1024 && result->is_open == true))
+        if ((ctx->config->port_count == 1024 && result->state == OPEN)||(ctx->config->port_count != 1024 && result->state != OPEN) || (ctx->config->port_count != 1024 && result->state == OPEN))
         {
-            const char* state = result->is_open ? "\033[32mopen\033[0m" : "\033[31mclosed\033[0m";
+            const char* state = result->state == OPEN ? "\033[32mopen\033[0m" : "\033[31mclosed\033[0m";
             printf("%-6s %-20s %-19s %.3fs\n",
                 port_str,
                 service_str,
@@ -95,7 +95,7 @@ void print_scan_results(t_context *ctx, const char* target_ip)
                 result->response_time);
         }
 
-        if (result->is_open) {
+        if (result->state == OPEN) {
             open_ports_found = true;
             responded_ports++;
         }

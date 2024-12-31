@@ -75,7 +75,6 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
     t_context *ctx = (t_context *)user;
     struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
     
-    // Handle UDP scan responses (ICMP port unreachable means port is closed)
     if (iph->protocol == IPPROTO_ICMP) 
     {
         struct icmphdr *icmph = (struct icmphdr*)((u_char*)iph + (iph->ihl * 4));
@@ -95,7 +94,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
             }
             
             if (result_idx != -1) {
-                ctx->results[result_idx].is_open = false;
+                ctx->results[result_idx].state = CLOSED;
                 end_port_timing(&ctx->results[result_idx]);
             }
         }
@@ -110,7 +109,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
         
         if (iph->saddr == ctx->dest_ip.s_addr)
         {
-            int scan_type = -1;
+            int tcp_responses = -1;
             uint16_t port = ntohs(tcph->source);
 
             int result_idx = -1;
@@ -128,16 +127,16 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
 
             if (tcph->syn == 1 && tcph->ack == 1) 
             {
-                scan_type = SYN_SCAN;
-                ctx->results[result_idx].is_open = true;
+                tcp_responses = SYN_SCAN;
+                ctx->results[result_idx].state = OPEN;
                 end_port_timing(&ctx->results[result_idx]);
             } else if (tcph->rst == 1) 
             {
-                ctx->results[result_idx].is_open = false;
+                ctx->results[result_idx].state = CLOSED;
                 end_port_timing(&ctx->results[result_idx]);
             }
 
-            if (scan_type != -1)
+            if (tcp_responses != -1)
             {
                 struct servent *service = getservbyport(htons(port), "tcp");
                 if (service)
