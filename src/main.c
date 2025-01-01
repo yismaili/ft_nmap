@@ -1,6 +1,7 @@
 #include "../includes/ft_nmap.h"
 #include "../includes/scanner.h"
 #include <errno.h>
+
 void init_config(t_scan_config *config) {
   config->target_ips = NULL;
   config->ip_count = 0;

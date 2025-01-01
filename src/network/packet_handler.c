@@ -69,23 +69,30 @@ void end_port_timing(t_result *result)
     result->response_time = result->end_time - result->start_time;
 }
 
+const char* format_ipv4_address_to_string(const struct in_addr* addr)
+{
+    static char buf[INET_ADDRSTRLEN];
+
+    return inet_ntop(AF_INET, addr, buf, sizeof buf);
+}
+
 void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet) 
 {
     struct ethhdr *ethhdr = (struct ethhdr*)packet;
     t_context *ctx = (t_context *)user;
     struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
     
-    if (iph->protocol == IPPROTO_ICMP) 
+    if (iph->protocol == IPPROTO_UDP) 
     {
-        struct icmphdr *icmph = (struct icmphdr*)((u_char*)iph + (iph->ihl * 4));
-        if (icmph->type == ICMP_DEST_UNREACH && icmph->code == ICMP_PORT_UNREACH)
+        int ip_header_len = iph->ihl * 4;
+        struct udphdr *udph = (struct udphdr*)((u_char*)iph + ip_header_len);
+        
+        if (iph->saddr == ctx->dest_ip.s_addr)
         {
-            // Extract original UDP packet from ICMP payload
-            struct iphdr *orig_iph = (struct iphdr*)(((u_char*)icmph) + sizeof(struct icmphdr));
-            struct udphdr *orig_udph = (struct udphdr*)((u_char*)orig_iph + (orig_iph->ihl * 4));
-            
-            uint16_t port = ntohs(orig_udph->dest);
+            uint16_t port = ntohs(udph->source);
             int result_idx = -1;
+            
+            // Find matching port in our configuration
             for (int i = 0; i < ctx->config->port_count; i++) {
                 if (ctx->config->ports[i] == port) {
                     result_idx = i;
@@ -93,9 +100,20 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
                 }
             }
             
-            if (result_idx != -1) {
-                ctx->results[result_idx].state = CLOSED;
+            if (result_idx != -1) 
+            {
+                // If we receive a UDP response, the port is likely open
+                ctx->results[result_idx].state = OPEN;
                 end_port_timing(&ctx->results[result_idx]);
+                
+                // Try to get service name
+                struct servent *service = getservbyport(htons(port), "udp");
+                if (service) {
+                    strncpy(ctx->results[result_idx].service_name, 
+                            service->s_name, 
+                            sizeof(ctx->results[result_idx].service_name) - 1);
+                    ctx->results[result_idx].service_name[sizeof(ctx->results[result_idx].service_name) - 1] = '\0';
+                }
             }
         }
     }
@@ -103,9 +121,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
     if (iph->protocol == IPPROTO_TCP) 
     {
         int ip_header_len = iph->ihl * 4;
-        
         struct tcphdr *tcph = (struct tcphdr*)((u_char *)iph + ip_header_len);
-       // print_h(ethhdr,iph ,tcph);
         
         if (iph->saddr == ctx->dest_ip.s_addr)
         {
@@ -130,7 +146,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
                 tcp_responses = SYN_SCAN;
                 ctx->results[result_idx].state = OPEN;
                 end_port_timing(&ctx->results[result_idx]);
-            } else if (tcph->rst == 1) 
+            } 
+            else if (tcph->rst == 1) 
             {
                 ctx->results[result_idx].state = CLOSED;
                 end_port_timing(&ctx->results[result_idx]);
@@ -139,13 +156,14 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
             if (tcp_responses != -1)
             {
                 struct servent *service = getservbyport(htons(port), "tcp");
-                if (service)
-                    strncpy(ctx->results[result_idx].service_name, service->s_name, sizeof(ctx->results[result_idx].service_name) - 1);
+                if (service) {
+                    strncpy(ctx->results[result_idx].service_name, service->s_name,sizeof(ctx->results[result_idx].service_name) - 1);
+                    ctx->results[result_idx].service_name[sizeof(ctx->results[result_idx].service_name) - 1] = '\0';
+                }
             }
         }
     }
 }
-
 
 void *start_packet_sniffer(void* ptr) 
 {
@@ -158,11 +176,12 @@ void *start_packet_sniffer(void* ptr)
     t_context *ctx = (t_context*)ptr;
 
     pthread_mutex_lock(ctx->mutex_lock);
-    
-    ctx->handle = pcap_open_live("eth0", BUFSIZ, 1, 1000, errbuf);
+    char *interface = retrieve_network_interface(ctx->source_ip);
+    ctx->handle = pcap_open_live(interface, BUFSIZ, 1, 1000, errbuf);
+    // printf("---%s---\n",interface);
     if (ctx->handle == NULL) 
     {
-        fprintf(stderr, "Couldn't open device %s: %s\n", "eth0", errbuf);
+        fprintf(stderr, "Couldn't open device %s\n", errbuf);
         pthread_mutex_unlock(ctx->mutex_lock);
         return NULL;
     }
@@ -175,7 +194,7 @@ void *start_packet_sniffer(void* ptr)
         return NULL;
     }
 
-    snprintf(filter_exp, sizeof(filter_exp), "(tcp or icmp) and src host %s", inet_ntoa(ctx->dest_ip));
+    snprintf(filter_exp, sizeof(filter_exp), "(tcp or udp) and src host %s", inet_ntoa(ctx->dest_ip));
     if (pcap_compile(ctx->handle, &fp_bpf, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) 
     {
         fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(ctx->handle));
@@ -194,8 +213,10 @@ void *start_packet_sniffer(void* ptr)
 
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
+
     FD_ZERO(&read_fds);
     FD_SET(fd, &read_fds);
+
     int ready = select(fd + 1, &read_fds, NULL, NULL, &timeout);
     if (ready == -1) {
         fprintf(stderr, "Select error: %s\n", strerror(errno));
@@ -218,11 +239,4 @@ void *start_packet_sniffer(void* ptr)
     pthread_mutex_unlock(ctx->mutex_lock);
 
     return NULL;
-}
-
-const char* format_ipv4_address_to_string(const struct in_addr* addr)
-{
-    static char buf[INET_ADDRSTRLEN];
-
-    return inet_ntop(AF_INET, addr, buf, sizeof buf);
 }

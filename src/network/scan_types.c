@@ -25,7 +25,6 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
 {
     struct in_addr target_in_addr;
     pthread_t sniffer_thread;
-printf("---%d\n---",scan_type);
     if (inet_pton(AF_INET, target, &target_in_addr) <= 0) {
         printf("Invalid target IP address: %s\n", target);
         return;
@@ -52,7 +51,8 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
     }
 
     if (scan_type == UDP_SCAN) {
-        while (i < ctx->config->port_count) {
+        while (i < ctx->config->port_count) 
+        {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
             start_port_timing(&ctx->results[i]);

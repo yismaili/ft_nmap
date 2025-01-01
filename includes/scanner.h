@@ -20,6 +20,9 @@
 #include <sys/select.h>
 #include <netinet/udp.h>
 #include <netinet/ip_icmp.h>
+#include <ifaddrs.h>
+
+
 
 #define SYN_SCAN  0
 #define FIN_SCAN  1
@@ -90,4 +93,5 @@ void print_scan_results(t_context *ctx, const char* target_ip);
 void start_threaded_scan(t_context *ctx, char *target_ip);
 void end_port_timing(t_result *result);
 void start_port_timing(t_result *result);
+char *retrieve_network_interface(const char *ip_address);
 #endif
