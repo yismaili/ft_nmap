@@ -73,10 +73,11 @@ void* thread_scan_ports(void *arg) {
         perror("Could not create sniffer thread");
         return NULL;
     }
+    printf("----%s----\n", thread_data->target_ip);
     for (int i = thread_data->start_port_index; i < thread_data->end_port_index; i++) 
     {
         start_port_timing(&ctx->results[i]);
-        scan_port_thread(ctx, ctx->config->target_ips[0], ctx->config->ports[i]);
+        scan_port_thread(ctx, thread_data->target_ip, ctx->config->ports[i]);
     }
 
     pthread_join(sniffer_thread, NULL);
@@ -100,7 +101,7 @@ void start_threaded_scan(t_context *ctx, char *target_ip)
 
     for (int i = 0; i < ctx->config->thread_count; i++) {
         thread_data[i].ctx = ctx;
-        thread_data[i].thread_id = i;
+        // thread_data[i].thread_id = i;
         thread_data[i].start_port_index = i * ports_per_thread;
         thread_data[i].end_port_index = thread_data[i].start_port_index + ports_per_thread;
         thread_data[i].target_ip = target_ip;

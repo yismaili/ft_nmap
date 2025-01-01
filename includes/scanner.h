@@ -62,7 +62,7 @@ typedef struct {
     t_context *ctx;
     int start_port_index;
     int end_port_index;
-    int thread_id;
+    // int thread_id;
     char *target_ip;
 } t_thread_data;
 
