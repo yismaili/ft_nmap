@@ -207,7 +207,10 @@ void *start_packet_sniffer(void* ptr)
     }
 
     if (FD_ISSET(fd, &read_fds)) {
-        pcap_loop(ctx->handle, 4, packet_handler, (u_char*)ctx);
+        if (ctx->config->port_count < 5)
+            pcap_loop(ctx->handle, 1, packet_handler, (u_char*)ctx);
+        else
+            pcap_loop(ctx->handle, 4, packet_handler, (u_char*)ctx);
     }
     
     pcap_freecode(&fp_bpf);

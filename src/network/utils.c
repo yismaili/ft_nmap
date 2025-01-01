@@ -88,6 +88,13 @@ void print_scan_results(t_context *ctx, const char* target_ip)
         if ((ctx->config->port_count == 1024 && result->state == OPEN)||(ctx->config->port_count != 1024 && result->state != OPEN) || (ctx->config->port_count != 1024 && result->state == OPEN))
         {
             const char* state = result->state == OPEN ? "\033[32mopen\033[0m" : "\033[31mclosed\033[0m";
+            //  const char* state;
+            // if (result->state == OPEN)
+            //     state = "\033[32mopen\033[0m";
+            // else if (result->state == CLOSED)
+            //     state = "\033[31mclosed\033[0m";
+            // else if (result->state == FILTERED)
+            //     state = "\033[31mfiltered\033[0m";
             printf("%-6s %-20s %-19s %.3fs\n",
                 port_str,
                 service_str,

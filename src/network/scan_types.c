@@ -25,7 +25,7 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
 {
     struct in_addr target_in_addr;
     pthread_t sniffer_thread;
-
+printf("---%d\n---",scan_type);
     if (inet_pton(AF_INET, target, &target_in_addr) <= 0) {
         printf("Invalid target IP address: %s\n", target);
         return;
