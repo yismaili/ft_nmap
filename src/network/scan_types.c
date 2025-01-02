@@ -105,7 +105,13 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     iph->ttl = 64;
     iph->protocol = IPPROTO_TCP;
     iph->check = 0;
-    iph->saddr = inet_addr(source_ip);
+		if (ctx->config->hide_source_ip) {
+			char *random_ip = generate_random_ip();
+			iph->saddr = inet_addr(random_ip);
+			free(random_ip);
+		} else {
+			iph->saddr = inet_addr(source_ip);
+		}
     iph->daddr = ctx->dest_ip.s_addr;
 
     tcph->source = htons(46156);
@@ -123,6 +129,11 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     tcph->psh = 0;
     tcph->ack = 0;
     tcph->urg = 0;
+
+  	if (ctx->config->bypass_ids) {
+			iph->ttl = 128;
+			tcph->th_sport = htons(rand() % 65535);
+		}
 
     switch(scan_type) {
         case SYN_SCAN:
