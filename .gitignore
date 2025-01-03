@@ -1,3 +1,21 @@
-.vscode
- .DS_Store/
-env/
+ft_nmap
+
+*.o
+
+*.lib
+*.a
+
+*.exe
+*.out
+*.app
+
+*.dSYM/
+
+*.d
+
+*.swp
+*~
+
+.vscode/
+.idea/
+.vagrant/

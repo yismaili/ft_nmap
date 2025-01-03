@@ -7,6 +7,11 @@
 #include <ctype.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <errno.h>
+#include <time.h>
+
+#define BUFFER_SIZE 4096
 
 typedef struct e_scan_type {
   bool syn;
@@ -25,6 +30,13 @@ typedef struct s_scan_config {
   t_scan_type scan_types;
   int thread_count;
   double start_time;
+	bool hide_source_ip;
+	bool bypass_ids;
+	bool os_detection;
+	bool version_detection;
+	int timeout;
+	int random_hosts;
+  char *logfile;
 } t_scan_config;
 
 bool parse_arguments(int argc, char **argv, t_scan_config *config);
@@ -36,5 +48,9 @@ bool parse_ips(char *ips, t_scan_config *config);
 bool parse_file(char *filename, t_scan_config *config);
 int is_valid_ipv4(char *str);
 int is_valid_hostname(char *str);
+char *resolve_dns(const char *hostname);
+bool parse_timeout(char *timeout_str, t_scan_config *config);
+bool parse_random(char *random_str, t_scan_config *config);
+char* generate_random_ip(void);
 
 #endif

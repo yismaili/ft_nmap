@@ -144,6 +144,19 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
 
             if (tcph->syn == 1 && tcph->ack == 1) 
             {
+              if (ctx->config->version_detection) {
+                  char *version = detect_service_version(
+                    format_ipv4_address_to_string(&(ctx->dest_ip)), 
+                    port,
+                    ctx->config->timeout
+                  );
+                  if (version) {
+                    strncpy(ctx->results[result_idx].service_version, 
+                            version, 
+                            sizeof(ctx->results[result_idx].service_version) - 1);
+                    free(version);
+                  }
+                }
                 tcp_responses = SYN_SCAN;
                 ctx->results[result_idx].state = OPEN;
                 end_port_timing(&ctx->results[result_idx]);
@@ -214,7 +227,7 @@ void *start_packet_sniffer(void* ptr)
         return NULL;
     }
 
-    timeout.tv_sec = 5;
+    timeout.tv_sec = ctx->config->timeout;
     timeout.tv_usec = 0;
 
     FD_ZERO(&read_fds);

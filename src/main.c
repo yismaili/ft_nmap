@@ -8,12 +8,30 @@ void init_config(t_scan_config *config) {
   config->ports = NULL;
   config->port_count = 0;
   config->thread_count = 0;
+	config->hide_source_ip = false;
+	config->bypass_ids = false;
+	config->os_detection = false;
+	config->version_detection = false;
+  config->timeout = 5;
   config->scan_types.syn = false;
   config->scan_types.null = false;
   config->scan_types.ack = false;
   config->scan_types.fin = false;
   config->scan_types.xmas = false;
   config->scan_types.udp = false;
+  config->random_hosts = 0;
+  config->logfile = NULL;
+}
+
+void setup_logging(t_scan_config *config) {
+    if (config->logfile) {
+        FILE *log_file = freopen(config->logfile, "w", stdout);
+        if (!log_file) {
+            fprintf(stderr, "Error: Could not open logfile %s\n", config->logfile);
+            exit(1);
+        }
+        dup2(fileno(stdout), fileno(stderr));
+    }
 }
 
 void debug_config(t_scan_config config) {
@@ -63,6 +81,7 @@ int main(int argc, char **argv)
     }
     // debug_config(config);
     context.config = &config;
+  	setup_logging(&config);
     context.results = calloc(config.port_count, sizeof(t_result));
     if (!context.results) {
         fprintf(stderr, "Failed to allocate memory for results\n");
@@ -74,6 +93,7 @@ int main(int argc, char **argv)
         context.results[i].port = config.ports[i];
         context.results[i].state = FILTERED;
         context.results[i].service_name[0] = '\0';
+				context.results[i].service_version[0] = '\0';
     }
 
     retrieve_source_ip_address(&context);
@@ -91,6 +111,13 @@ int main(int argc, char **argv)
         start_threaded_scan(&context, config.target_ips[i]);
       i++;
     }
+    if (config.os_detection) {
+        for (int i = 0; i < config.ip_count; i++) {
+            const char *os = detect_os(config.target_ips[i], config.timeout);
+            printf("Detected OS for %s: %s\n", config.target_ips[i], os);
+        }
+    }
+
     if (context.results) {
         free(context.results);
     }

@@ -1,4 +1,5 @@
 #include "../../includes/scanner.h"
+#include <stdatomic.h>
 
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes)
 {
@@ -67,8 +68,13 @@ void print_scan_results(t_context *ctx, const char* target_ip)
     printf("=================================================================\n");
 
     // Print header with proper column alignment
-    printf("%-6s %-20s %-10s %-10s\n", 
+    if (ctx->config->version_detection) {
+      printf("%-6s %-10s %-10s %-10s %-10s\n",
+           "PORT", "SERVICE", "VERSION", "STATE", "TIME");
+    } else {
+      printf("%-6s %-10s %-10s %-10s\n", 
            "PORT", "SERVICE", "STATE","TIME");
+    }
     printf("-----------------------------------------------------------------\n");
 
     bool open_ports_found = false;
@@ -83,10 +89,14 @@ void print_scan_results(t_context *ctx, const char* target_ip)
         snprintf(port_str, sizeof(port_str), "%d", port);
 
         char service_str[21];
+        char version_str[21];
         snprintf(service_str, sizeof(service_str), "%s", 
                 result->service_name[0] ? result->service_name : "Unknown");
+        snprintf(version_str, sizeof(version_str), "%s", 
+                result->service_version[0] ? result->service_version : "Unknown");
         if ((ctx->config->port_count == 1024 && result->state == OPEN)||(ctx->config->port_count != 1024 && result->state != OPEN) || (ctx->config->port_count != 1024 && result->state == OPEN))
         {
+            //  const char* state = result->state == OPEN ? "\033[32mopen\033[0m" : "\033[31mfiltered\033[0m";
              const char* state;
             if (result->state == OPEN)
                 state = "\033[32mopen\033[0m";
@@ -99,6 +109,7 @@ void print_scan_results(t_context *ctx, const char* target_ip)
                 service_str,
                 state,
                 result->response_time);
+
         }
 
         if (result->state == OPEN) {

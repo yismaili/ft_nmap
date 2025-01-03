@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <pcap.h>
+#include <ifaddrs.h>
 #include "../includes/ft_nmap.h"
 #include <limits.h>
 #include <math.h>
@@ -39,6 +40,7 @@ enum port_state {
 
 typedef struct {
     char service_name[1024];
+    char service_version[1024];
     int port;
     enum port_state state;
     double start_time;
@@ -94,4 +96,7 @@ void start_threaded_scan(t_context *ctx, char *target_ip);
 void end_port_timing(t_result *result);
 void start_port_timing(t_result *result);
 char *retrieve_network_interface(const char *ip_address);
+const char *detect_os(const char *target, int config_timeout);
+char *detect_service_version(const char *ip_address, int port, int config_timeout);
+
 #endif
