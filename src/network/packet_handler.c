@@ -109,10 +109,11 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
                 // Try to get service name
                 struct servent *service = getservbyport(htons(port), "udp");
                 if (service) {
-                    strncpy(ctx->results[result_idx].service_name, 
-                            service->s_name, 
-                            sizeof(ctx->results[result_idx].service_name) - 1);
+                    strncpy(ctx->results[result_idx].service_name, service->s_name, sizeof(ctx->results[result_idx].service_name) - 1);
                     ctx->results[result_idx].service_name[sizeof(ctx->results[result_idx].service_name) - 1] = '\0';
+                }
+                else{
+                     ctx->results[result_idx].state = CLOSED;
                 }
             }
         }
@@ -149,7 +150,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
             } 
             else if (tcph->rst == 1) 
             {
-                ctx->results[result_idx].state = CLOSED;
+                ctx->results[result_idx].state = FILTERED;
                 end_port_timing(&ctx->results[result_idx]);
             }
 
@@ -159,6 +160,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char
                 if (service) {
                     strncpy(ctx->results[result_idx].service_name, service->s_name,sizeof(ctx->results[result_idx].service_name) - 1);
                     ctx->results[result_idx].service_name[sizeof(ctx->results[result_idx].service_name) - 1] = '\0';
+                }else{
+                    ctx->results[result_idx].state = CLOSED;
                 }
             }
         }

@@ -1,6 +1,7 @@
 #include "../includes/scanner.h"
 
-void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_in_addr, int port) {
+void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_in_addr, int port) 
+{
     char datagram[4096];
     struct iphdr* iph = (struct iphdr*)datagram;
     struct tcphdr* tcph = (struct tcphdr*)(datagram + sizeof(struct ip));
@@ -36,7 +37,8 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
     }
 }
 
-void scan_port_thread(t_context *ctx, char *ip_addr, int port) {
+void scan_port_thread(t_context *ctx, char *ip_addr, int port) 
+{
     struct in_addr target_in_addr;
 
     if (inet_pton(AF_INET, ip_addr, &target_in_addr) <= 0) {
@@ -73,7 +75,6 @@ void* thread_scan_ports(void *arg) {
         perror("Could not create sniffer thread");
         return NULL;
     }
-    printf("----%s----\n", thread_data->target_ip);
     for (int i = thread_data->start_port_index; i < thread_data->end_port_index; i++) 
     {
         start_port_timing(&ctx->results[i]);
