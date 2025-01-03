@@ -69,7 +69,7 @@ void print_scan_results(t_context *ctx, const char* target_ip)
 
     // Print header with proper column alignment
     if (ctx->config->version_detection) {
-      printf("%-6s %-10s %-10s %-10s %-10s\n",
+      printf("%-6s %-10s %-20s %-10s %-10s\n",
            "PORT", "SERVICE", "VERSION", "STATE", "TIME");
     } else {
       printf("%-6s %-10s %-10s %-10s\n", 
@@ -104,11 +104,20 @@ void print_scan_results(t_context *ctx, const char* target_ip)
                 state = "\033[31mclosed\033[0m";
             else if (result->state == FILTERED)
                 state = "\033[31mfiltered\033[0m";
-            printf("%-6s %-20s %-19s %.3fs\n",
-                port_str,
-                service_str,
-                state,
-                result->response_time);
+            if (ctx->config->version_detection) {
+              printf("%-6s %-10s %-20s %-19s %.3fs\n",
+                  port_str,
+                  service_str,
+                  version_str,
+                  state,
+                  result->response_time);
+            } else {
+              printf("%-6s %-10s %-19s %.3fs\n",
+                  port_str,
+                  service_str,
+                  state,
+                  result->response_time);
+            }
 
         }
 
