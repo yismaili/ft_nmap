@@ -18,8 +18,7 @@ void retrieve_source_ip_address(t_context *ctx)
     if (connect(sock, (const struct sockaddr*)&serv, sizeof(serv)) != 0)
     {
         printf("Failed to get local IP\n");
-				cleanup_program(ctx->config, ctx);
-				exit (2);
+	    exit (2);
     }
 
 
@@ -28,8 +27,7 @@ void retrieve_source_ip_address(t_context *ctx)
 
     if (getsockname(sock, (struct sockaddr*)&name, &namelen) != 0){
         printf("Failed to get local IP");
-				cleanup_program(ctx->config, ctx);
-				exit (2);
+    	exit (2);
 	}
 
     inet_ntop(AF_INET, &name.sin_addr, ctx->source_ip, INET_ADDRSTRLEN);
@@ -39,3 +37,33 @@ void retrieve_source_ip_address(t_context *ctx)
     // exit (2);
 }
 
+char *retrieve_network_interface(const char *ip_address)
+{
+    struct ifaddrs *ifaddr, *ifa;
+    char addr[INET_ADDRSTRLEN];
+    char *interface_name = NULL;
+
+    if (getifaddrs(&ifaddr) == -1)
+    {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) 
+    {
+        if (ifa->ifa_addr == NULL) 
+          continue;
+        if (ifa->ifa_addr->sa_family == AF_INET) 
+        {
+            struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
+            inet_ntop(AF_INET, &(sa->sin_addr), addr, INET_ADDRSTRLEN);
+            if (strcmp(addr, ip_address) == 0)
+            {
+                interface_name = strdup(ifa->ifa_name);
+                freeifaddrs(ifaddr);
+                return interface_name;
+            }
+        }
+    }
+    freeifaddrs(ifaddr);
+    return NULL;
+}

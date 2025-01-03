@@ -21,13 +21,9 @@
 #include <sys/select.h>
 #include <netinet/udp.h>
 #include <netinet/ip_icmp.h>
+#include <ifaddrs.h>
 
-#define PORT_STATE_OPEN 1
-#define PORT_STATE_CLOSED 2
-#define PORT_STATE_FILTERED 3
-#define PORT_STATE_OPEN_FILTERED 4
-#define PORT_STATE_UNFILTERED 5
-#define PORT_STATE_UNKNOWN 0
+
 
 #define SYN_SCAN  0
 #define FIN_SCAN  1
@@ -36,13 +32,20 @@
 #define ACK_SCAN  4
 #define UDP_SCAN  5
 
+enum port_state {
+    FILTERED,
+    OPEN,
+    CLOSED
+};
+
 typedef struct {
     char service_name[1024];
-		char service_version[1024];
+    char service_version[1024];
     int port;
-    int state;
-    bool is_open;
-    int scan_type;
+    enum port_state state;
+    double start_time;
+    double end_time;
+    double response_time;
 } t_result;
 
 typedef struct {
@@ -61,7 +64,7 @@ typedef struct {
     t_context *ctx;
     int start_port_index;
     int end_port_index;
-    int thread_id;
+    // int thread_id;
     char *target_ip;
 } t_thread_data;
 
@@ -90,7 +93,10 @@ const char* format_ipv4_address_to_string(const struct in_addr* addr);
 void* thread_scan_ports(void *arg);
 void print_scan_results(t_context *ctx, const char* target_ip);
 void start_threaded_scan(t_context *ctx, char *target_ip);
+void end_port_timing(t_result *result);
+void start_port_timing(t_result *result);
+char *retrieve_network_interface(const char *ip_address);
 const char *detect_os(const char *target, int config_timeout);
 char *detect_service_version(const char *ip_address, int port, int config_timeout);
-void cleanup_program(t_scan_config *config, t_context *context);
+
 #endif

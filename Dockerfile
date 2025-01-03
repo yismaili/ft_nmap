@@ -14,7 +14,6 @@ RUN apt-get install tcpdump -y
 RUN apt-get install nmap -y;
 RUN apt-get install libpcap-dev -y;
 RUN apt install net-tools -y
-RUN apt install valgrind -y
 WORKDIR /app
 # COPY . .
 

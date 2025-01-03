@@ -25,7 +25,6 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
 {
     struct in_addr target_in_addr;
     pthread_t sniffer_thread;
-
     if (inet_pton(AF_INET, target, &target_in_addr) <= 0) {
         printf("Invalid target IP address: %s\n", target);
         return;
@@ -33,7 +32,6 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
     if (pthread_create(&sniffer_thread, NULL, start_packet_sniffer, ctx) < 0)
     {
         printf("Could not create sniffer thread");
-				cleanup_program(ctx->config, ctx);
         exit(2);
     }
     send_scan_packets(ctx, scan_type, &target_in_addr);
@@ -49,13 +47,15 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
     if (ctx->dest_ip.s_addr == -1) {
         printf("Invalid address\n");
-				cleanup_program(ctx->config, ctx);
-				exit(2);
+        exit(2);
     }
-    if (scan_type == 5) {
-        while (i < ctx->config->port_count) {
+
+    if (scan_type == UDP_SCAN) {
+        while (i < ctx->config->port_count) 
+        {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
+            start_port_timing(&ctx->results[i]);
             craft_udp_packet(ctx, buffer_packet, ctx->source_ip, iph, port);
             dest.sin_family = AF_INET;
             dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
@@ -75,6 +75,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
             struct pseudo_header psh;
+            start_port_timing(&ctx->results[i]);
 
             dest.sin_family = AF_INET;
             dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
@@ -111,12 +112,7 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
 		} else {
 			iph->saddr = inet_addr(source_ip);
 		}
-		if (ctx->config->bypass_ids) {
-			iph->ttl = 128;
-			tcph->th_sport = htons(rand() % 65535);
-		}
     iph->daddr = ctx->dest_ip.s_addr;
-    iph->check = calculate_ip_tcp_checksum((unsigned short*)buffer_packet, iph->tot_len >> 1);
 
     tcph->source = htons(46156);
     tcph->dest = htons(80);
@@ -134,29 +130,34 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     tcph->ack = 0;
     tcph->urg = 0;
 
+  	if (ctx->config->bypass_ids) {
+			iph->ttl = 128;
+			tcph->th_sport = htons(rand() % 65535);
+		}
+
     switch(scan_type) {
-        case 0: 
+        case SYN_SCAN:
             tcph->syn = 1;
             break;
-        case 1: 
-            break;
-        case 2: 
-            tcph->ack = 1;
-            break;
-        case 3:
+
+        case FIN_SCAN:
             tcph->fin = 1;
             break;
-        case 4: 
+        case NULL_SCAN:
+            break;
+
+        case XMAS_SCAN:
             tcph->fin = 1;
             tcph->psh = 1;
             tcph->urg = 1;
             break;
-        case 5: // UDP scan
-            break;
-        default:
-            tcph->syn = 1;
+
+        case ACK_SCAN:
+            tcph->ack = 1;
             break;
     }
+    iph->check = calculate_ip_tcp_checksum((unsigned short*)buffer_packet, iph->tot_len >> 1);
+
 }
 
 void craft_udp_packet(t_context *ctx, char* buffer_packet, const char* source_ip, struct iphdr* iph, int port)

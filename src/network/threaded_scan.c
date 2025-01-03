@@ -1,42 +1,20 @@
 #include "../includes/scanner.h"
 
-void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_in_addr, int port) {
-  if (scan_type == UDP_SCAN) {
-    int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sockfd < 0) {
-      perror("UDP socket creation failed");
-      return;
-    }
-
-    struct sockaddr_in dest;
-    memset(&dest, 0, sizeof(dest));
-    dest.sin_family = AF_INET;
-    dest.sin_addr.s_addr = target_in_addr->s_addr;
-    dest.sin_port = htons(port);
-
-    char buffer[1] = {0};
-    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&dest, sizeof(dest)) < 0) {
-      perror("Error sending UDP packet");
-      close(sockfd);
-      return;
-    }
-
-    close(sockfd);
-  } else {
-    char datagram[4096] = {0};
+void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_in_addr, int port) 
+{
+    char datagram[4096];
     struct iphdr* iph = (struct iphdr*)datagram;
     struct tcphdr* tcph = (struct tcphdr*)(datagram + sizeof(struct ip));
 
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
     if (ctx->dest_ip.s_addr == INADDR_NONE) {
-      fprintf(stderr, "Invalid address\n");
-      return;
+        fprintf(stderr, "Invalid address\n");
+        return;
     }
 
     craft_tcp_packet(ctx, datagram, ctx->source_ip, iph, tcph, scan_type);
 
     struct sockaddr_in dest;
-    memset(&dest, 0, sizeof(dest)); 
     struct pseudo_header psh;
 
     dest.sin_family = AF_INET;
@@ -55,22 +33,12 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
 
     if (sendto(ctx->raw_socket, datagram, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, 
                (struct sockaddr*)&dest, sizeof(dest)) < 0) {
-      perror("Error sending SYN packet");
+        perror("Error sending SYN packet");
     }
-  }
-  int result_idx = -1;
-  for (int i = 0; i < ctx->config->port_count; i++) {
-    if (ctx->config->ports[i] == port) {
-      result_idx = i;
-      break;
-    }
-  }
-  if (result_idx == -1)
-    return;
-  ctx->results[result_idx].scan_type = scan_type;
 }
 
-void scan_port_thread(t_context *ctx, char *ip_addr, int port) {
+void scan_port_thread(t_context *ctx, char *ip_addr, int port) 
+{
     struct in_addr target_in_addr;
 
     if (inet_pton(AF_INET, ip_addr, &target_in_addr) <= 0) {
@@ -94,7 +62,7 @@ void scan_port_thread(t_context *ctx, char *ip_addr, int port) {
         perform_scan_thread(ctx, XMAS_SCAN, &target_in_addr, port);
     }
     if (ctx->config->scan_types.udp) {
-        perform_scan_thread(ctx, UDP_SCAN, &target_in_addr, port);
+        perform_scan_thread(ctx, 0, &target_in_addr, port);
     }
 }
 
@@ -107,9 +75,10 @@ void* thread_scan_ports(void *arg) {
         perror("Could not create sniffer thread");
         return NULL;
     }
-
-    for (int i = thread_data->start_port_index; i < thread_data->end_port_index; i++) {
-        scan_port_thread(ctx, ctx->config->target_ips[0], ctx->config->ports[i]);
+    for (int i = thread_data->start_port_index; i < thread_data->end_port_index; i++) 
+    {
+        start_port_timing(&ctx->results[i]);
+        scan_port_thread(ctx, thread_data->target_ip, ctx->config->ports[i]);
     }
 
     pthread_join(sniffer_thread, NULL);
@@ -133,7 +102,7 @@ void start_threaded_scan(t_context *ctx, char *target_ip)
 
     for (int i = 0; i < ctx->config->thread_count; i++) {
         thread_data[i].ctx = ctx;
-        thread_data[i].thread_id = i;
+        // thread_data[i].thread_id = i;
         thread_data[i].start_port_index = i * ports_per_thread;
         thread_data[i].end_port_index = thread_data[i].start_port_index + ports_per_thread;
         thread_data[i].target_ip = target_ip;
@@ -153,10 +122,7 @@ void start_threaded_scan(t_context *ctx, char *target_ip)
     for (int i = 0; i < ctx->config->thread_count; i++) {
         pthread_join(threads[i], NULL);
     }
-    
-    usleep(100000);
-    
-    print_scan_results(ctx, target_ip);
+    print_scan_results(ctx, target_ip); 
     free(threads);
     free(thread_data);
 }

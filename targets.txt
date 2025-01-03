@@ -41,18 +41,13 @@ cat /proc/sys/kernel/threads-max
 
 
 ./ft_nmap --ip 185.203.217.46 --ports 22-25 --speedup 4
+./ft_nmap --ip 185.203.217.46  --speedup 4
+./ft_nmap --ip 185.203.217.46 --ports 22,25,443 --speedup 4
 
-
+./ft_nmap --ip 1.1.1.1
 
 * localhost 
 * UDP
 * enthr_interfice
 * filterd / open/ close
 * cleanup_scanner | ok
-
-# Bugs to fix:
-# scanning localhost
-# show results of all scan types (syn, ack, etc)
-# show the approprite state of scans (open, filtered, closed)
-# make --hide-ip work on a virtual machine (just bonus, can be skipped)
-
