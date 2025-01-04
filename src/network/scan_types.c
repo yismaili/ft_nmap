@@ -32,6 +32,7 @@ void execute_network_scan(t_context *ctx, const char* target, int scan_type)
     if (pthread_create(&sniffer_thread, NULL, start_packet_sniffer, ctx) < 0)
     {
         printf("Could not create sniffer thread");
+        cleanup_program(ctx->config, ctx);
         exit(2);
     }
     send_scan_packets(ctx, scan_type, &target_in_addr);
@@ -47,6 +48,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
     if (ctx->dest_ip.s_addr == -1) {
         printf("Invalid address\n");
+        cleanup_program(ctx->config, ctx);
         exit(2);
     }
 
@@ -55,6 +57,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
         {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
+            memset(&dest, 0, sizeof(dest));
             start_port_timing(&ctx->results[i]);
             craft_udp_packet(ctx, buffer_packet, ctx->source_ip, iph, port);
             dest.sin_family = AF_INET;
@@ -63,6 +66,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
             if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct udphdr),
                 0, (struct sockaddr*)&dest, sizeof(dest)) < 0) {
                 printf("Error sending UDP packet.");
+                cleanup_program(ctx->config, ctx);
                 exit(2);
             }
             i++;
@@ -73,6 +77,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
         {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
+            memset(&dest, 0, sizeof(dest));
             start_port_timing(&ctx->results[i]);
             craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type, port);
 
@@ -83,6 +88,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
             if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct tcphdr),
                 0, (struct sockaddr*)&dest, sizeof(dest)) < 0){
                 printf("Error sending syn packet.");
+                cleanup_program(ctx->config, ctx);
                 exit(2);
             }
             i++;

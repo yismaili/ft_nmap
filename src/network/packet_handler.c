@@ -193,6 +193,7 @@ void *start_packet_sniffer(void* ptr)
     pthread_mutex_lock(ctx->mutex_lock);
     char *interface = retrieve_network_interface(ctx->source_ip);
     ctx->handle = pcap_open_live(interface, BUFSIZ, 1, 1000, errbuf); //Opens a live packet capture session
+    free(interface);
     // 1 Promiscuous Mode / 1000 Timeout
     if (ctx->handle == NULL) 
     {
@@ -205,6 +206,7 @@ void *start_packet_sniffer(void* ptr)
     if (fd == -1) {
         fprintf(stderr, "pcap handle doesn't support select()\n");
         pcap_close(ctx->handle);
+        ctx->handle = NULL;
         pthread_mutex_unlock(ctx->mutex_lock);
         return NULL;
     }
@@ -214,6 +216,7 @@ void *start_packet_sniffer(void* ptr)
     {
         fprintf(stderr, "Couldn't parse filter\n");
         pcap_close(ctx->handle);
+        ctx->handle = NULL;
         pthread_mutex_unlock(ctx->mutex_lock);
         return NULL;
     }
@@ -222,6 +225,7 @@ void *start_packet_sniffer(void* ptr)
         fprintf(stderr, "Couldn't install filter\n");
         pcap_freecode(&fp_bpf);
         pcap_close(ctx->handle);
+        ctx->handle = NULL;
         pthread_mutex_unlock(ctx->mutex_lock);
         return NULL;
     }
@@ -238,6 +242,7 @@ void *start_packet_sniffer(void* ptr)
     } else if (ready == 0) {
         pcap_freecode(&fp_bpf);
         pcap_close(ctx->handle);
+        ctx->handle = NULL;
         pthread_mutex_unlock(ctx->mutex_lock);
         return NULL;
     }
@@ -251,6 +256,7 @@ void *start_packet_sniffer(void* ptr)
     
     pcap_freecode(&fp_bpf);
     pcap_close(ctx->handle);
+    ctx->handle = NULL;
     pthread_mutex_unlock(ctx->mutex_lock);
 
     return NULL;

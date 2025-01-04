@@ -2,7 +2,7 @@
 
 void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_in_addr, int port) 
 {
-    char buffer_packet[4096];
+    char buffer_packet[4096] = {0};
     struct iphdr* iph = (struct iphdr*)buffer_packet;
 
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
@@ -12,6 +12,7 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
     }
     if (scan_type == UDP_SCAN){
         struct sockaddr_in dest;
+        memset(&dest, 0, sizeof(dest)); 
         craft_udp_packet(ctx, buffer_packet, ctx->source_ip, iph, port);
         dest.sin_family = AF_INET;
         dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
@@ -19,12 +20,14 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
         if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct udphdr),
             0, (struct sockaddr*)&dest, sizeof(dest)) < 0) {
             printf("Error sending UDP packet.");
+            cleanup_program(ctx->config, ctx);
             exit(2);
         }
     }else{
         struct tcphdr* tcph = (struct tcphdr*)(buffer_packet + sizeof(struct ip));
         craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type, port);
         struct sockaddr_in dest;
+        memset(&dest, 0, sizeof(dest));
         struct pseudo_header psh;
 
         dest.sin_family = AF_INET;
@@ -44,6 +47,7 @@ void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_i
         if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, 
                 (struct sockaddr*)&dest, sizeof(dest)) < 0) {
             perror("Error sending SYN packet");
+            cleanup_program(ctx->config, ctx);
             exit(2);
         }
     }

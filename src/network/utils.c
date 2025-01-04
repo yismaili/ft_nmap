@@ -57,6 +57,8 @@ void init_results(t_context *ctx)
 
 void cleanup_scanner(t_context *ctx) 
 {
+    if (!ctx) return;
+
     if (ctx->mutex_lock) {
         pthread_mutex_destroy(ctx->mutex_lock);
         free(ctx->mutex_lock);
@@ -71,6 +73,11 @@ void cleanup_scanner(t_context *ctx)
     if (ctx->raw_socket >= 0) {
         close(ctx->raw_socket);
         ctx->raw_socket = -1;
+    }
+    
+    if (ctx->results) {
+        free(ctx->results);
+        ctx->results = NULL;
     }
 }
 

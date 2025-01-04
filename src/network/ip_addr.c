@@ -18,7 +18,8 @@ void retrieve_source_ip_address(t_context *ctx)
     if (connect(sock, (const struct sockaddr*)&serv, sizeof(serv)) != 0)
     {
         printf("Failed to get local IP\n");
-	    exit (2);
+        cleanup_program(ctx->config, ctx);
+	      exit (2);
     }
 
 
@@ -27,7 +28,8 @@ void retrieve_source_ip_address(t_context *ctx)
 
     if (getsockname(sock, (struct sockaddr*)&name, &namelen) != 0){
         printf("Failed to get local IP");
-    	exit (2);
+        cleanup_program(ctx->config, ctx);
+        exit (2);
 	}
 
     inet_ntop(AF_INET, &name.sin_addr, ctx->source_ip, INET_ADDRSTRLEN);
