@@ -84,8 +84,8 @@ void print_scan_results(t_context *ctx, const char* target_ip)
       printf("%-6s %-10s %-10s %-10s %-10s\n",
            "PORT", "SERVICE", "VERSION", "STATE", "TIME");
     } else {
-      printf("%-6s %-10s %-10s %-10s\n", 
-           "PORT", "SERVICE", "STATE","TIME");
+      printf("%-6s %-10s %-10s %-10s %-10s\n",
+           "PORT", "SERVICE", "VERSION", "STATE", "TIME");
     }
     printf("-----------------------------------------------------------------\n");
 
