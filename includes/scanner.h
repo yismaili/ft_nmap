@@ -51,7 +51,6 @@ typedef struct {
 typedef struct {
     char source_ip[INET6_ADDRSTRLEN];
     struct in_addr dest_ip;
-    int total_open_host;
     struct timespec start_time, finish_time;
     int raw_socket;
     pcap_t *handle;
@@ -64,7 +63,6 @@ typedef struct {
     t_context *ctx;
     int start_port_index;
     int end_port_index;
-    // int thread_id;
     char *target_ip;
 } t_thread_data;
 
@@ -83,7 +81,7 @@ void* start_packet_sniffer(void* ptr);
 void retrieve_source_ip_address(t_context *ctx);
 int init_row_socket(t_context *ctx);
 void execute_network_scan(t_context *ctx, const char* target, int scan_type);
-void craft_tcp_packet(t_context *ctx,char* datagram, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type);
+void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type, int port);
 void craft_udp_packet(t_context *ctx, char *buffer_packet, const char *source_ip, struct iphdr *iph, int port);
 void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_addr);
 unsigned short calculate_ip_tcp_checksum(unsigned short* ptr, int nbytes);
@@ -98,5 +96,6 @@ void start_port_timing(t_result *result);
 char *retrieve_network_interface(const char *ip_address);
 const char *detect_os(const char *target, int config_timeout);
 char *detect_service_version(const char *ip_address, int port, int config_timeout);
+void init_results(t_context *ctx);
 
 #endif

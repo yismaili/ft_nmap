@@ -11,7 +11,7 @@ int init_row_socket(t_context *ctx)
         return -1;
     }
 
-    int one = 1;
+    int one = 1; //enable the IP_HDRINCL
     if (setsockopt(ctx->raw_socket, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one)) < 0)
     {
         perror("Failed to set IP_HDRINCL");
@@ -69,13 +69,12 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
         }
     } else {
         struct tcphdr* tcph = (struct tcphdr*)(buffer_packet + sizeof(struct ip));
-        craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type);
         while (i < ctx->config->port_count) 
         {
             int port = ctx->config->ports[i];
             struct sockaddr_in dest;
-            struct pseudo_header psh;
             start_port_timing(&ctx->results[i]);
+            craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type, port);
 
             dest.sin_family = AF_INET;
             dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
@@ -92,7 +91,7 @@ void send_scan_packets(t_context *ctx, int scan_type, struct in_addr* target_in_
 }
 
 
-void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type)
+void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip, struct iphdr* iph, struct tcphdr* tcph, int scan_type, int port)
 {
     memset(buffer_packet, 0, 4096);
 
@@ -100,11 +99,11 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     iph->version = 4;
     iph->tos = 0;
     iph->tot_len = sizeof(struct ip) + sizeof(struct tcphdr);
-    iph->id = htons(46156);
+    iph->id = htons(46156); //representing the ID field of the packet
     iph->frag_off = htons(16384);
     iph->ttl = 64;
     iph->protocol = IPPROTO_TCP;
-    iph->check = 0;
+    iph->check = 0; 
 		if (ctx->config->hide_source_ip) {
 			char *random_ip = generate_random_ip();
 			iph->saddr = inet_addr(random_ip);
@@ -115,9 +114,11 @@ void craft_tcp_packet(t_context *ctx,char* buffer_packet, const char* source_ip,
     iph->daddr = ctx->dest_ip.s_addr;
 
     tcph->source = htons(46156);
-    tcph->dest = htons(80);
-    tcph->seq = htonl(1105024978);
-    tcph->ack_seq = 0;
+    //htons converts a 16-bit value from the host's byte order to network byte order.
+    tcph->dest = htons(port);
+    tcph->seq = htonl(1105024978); // used to keep track of the order of packets in a TCP connection
+    //htonl converts the decimal value into its network byte order representation
+    tcph->ack_seq = 0; 
     tcph->doff = sizeof(struct tcphdr) / 4;
     tcph->window = htons(14600);
     tcph->check = 0;
@@ -164,15 +165,15 @@ void craft_udp_packet(t_context *ctx, char* buffer_packet, const char* source_ip
 {
     memset(buffer_packet, 0, 4096);
     struct udphdr* udph = (struct udphdr*)(buffer_packet + sizeof(struct iphdr));
-    iph->ihl = 5;
-    iph->version = 4;
-    iph->tos = 0;
-    iph->tot_len = sizeof(struct iphdr) + sizeof(struct udphdr);
-    iph->id = htons(46156);
-    iph->frag_off = 0;
-    iph->ttl = 64;
+    iph->ihl = 5; // IP Header Length (20bytes)
+    iph->version = 4; // IPv4
+    iph->tos = 0; //Type of Service (0 meaning no special service request)
+    iph->tot_len = sizeof(struct iphdr) + sizeof(struct udphdr); //Total length of the packet
+    iph->id = htons(46156); // Packet identifier
+    iph->frag_off = 0; // manage packet fragmentation 
+    iph->ttl = 64; //Time-to-Live
     iph->protocol = IPPROTO_UDP;
-    iph->check = 0;
+    iph->check = 0; 
     iph->saddr = inet_addr(source_ip);
     iph->daddr = ctx->dest_ip.s_addr;
 

@@ -2,38 +2,50 @@
 
 void perform_scan_thread(t_context *ctx, int scan_type, struct in_addr* target_in_addr, int port) 
 {
-    char datagram[4096];
-    struct iphdr* iph = (struct iphdr*)datagram;
-    struct tcphdr* tcph = (struct tcphdr*)(datagram + sizeof(struct ip));
+    char buffer_packet[4096];
+    struct iphdr* iph = (struct iphdr*)buffer_packet;
 
     ctx->dest_ip.s_addr = inet_addr(format_ipv4_address_to_string(target_in_addr));
     if (ctx->dest_ip.s_addr == INADDR_NONE) {
         fprintf(stderr, "Invalid address\n");
         return;
     }
+    if (scan_type == UDP_SCAN){
+        struct sockaddr_in dest;
+        craft_udp_packet(ctx, buffer_packet, ctx->source_ip, iph, port);
+        dest.sin_family = AF_INET;
+        dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
 
-    craft_tcp_packet(ctx, datagram, ctx->source_ip, iph, tcph, scan_type);
+        if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct udphdr),
+            0, (struct sockaddr*)&dest, sizeof(dest)) < 0) {
+            printf("Error sending UDP packet.");
+            exit(2);
+        }
+    }else{
+        struct tcphdr* tcph = (struct tcphdr*)(buffer_packet + sizeof(struct ip));
+        craft_tcp_packet(ctx, buffer_packet, ctx->source_ip, iph, tcph, scan_type, port);
+        struct sockaddr_in dest;
+        struct pseudo_header psh;
 
-    struct sockaddr_in dest;
-    struct pseudo_header psh;
+        dest.sin_family = AF_INET;
+        dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
+        tcph->dest = htons(port);
+        tcph->check = 0;
 
-    dest.sin_family = AF_INET;
-    dest.sin_addr.s_addr = ctx->dest_ip.s_addr;
-    tcph->dest = htons(port);
-    tcph->check = 0;
+        psh.source_address = inet_addr(ctx->source_ip);
+        psh.dest_address = dest.sin_addr.s_addr;
+        psh.placeholder = 0;
+        psh.protocol = IPPROTO_TCP;
+        psh.tcp_length = htons(sizeof(struct tcphdr));
+        memcpy(&psh.tcp, tcph, sizeof(struct tcphdr));
 
-    psh.source_address = inet_addr(ctx->source_ip);
-    psh.dest_address = dest.sin_addr.s_addr;
-    psh.placeholder = 0;
-    psh.protocol = IPPROTO_TCP;
-    psh.tcp_length = htons(sizeof(struct tcphdr));
-    memcpy(&psh.tcp, tcph, sizeof(struct tcphdr));
+        tcph->check = calculate_ip_tcp_checksum((unsigned short*)&psh, sizeof(struct pseudo_header));
 
-    tcph->check = calculate_ip_tcp_checksum((unsigned short*)&psh, sizeof(struct pseudo_header));
-
-    if (sendto(ctx->raw_socket, datagram, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, 
-               (struct sockaddr*)&dest, sizeof(dest)) < 0) {
-        perror("Error sending SYN packet");
+        if (sendto(ctx->raw_socket, buffer_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, 
+                (struct sockaddr*)&dest, sizeof(dest)) < 0) {
+            perror("Error sending SYN packet");
+            exit(2);
+        }
     }
 }
 
@@ -62,7 +74,7 @@ void scan_port_thread(t_context *ctx, char *ip_addr, int port)
         perform_scan_thread(ctx, XMAS_SCAN, &target_in_addr, port);
     }
     if (ctx->config->scan_types.udp) {
-        perform_scan_thread(ctx, 0, &target_in_addr, port);
+        perform_scan_thread(ctx, UDP_SCAN, &target_in_addr, port);
     }
 }
 
@@ -102,7 +114,6 @@ void start_threaded_scan(t_context *ctx, char *target_ip)
 
     for (int i = 0; i < ctx->config->thread_count; i++) {
         thread_data[i].ctx = ctx;
-        // thread_data[i].thread_id = i;
         thread_data[i].start_port_index = i * ports_per_thread;
         thread_data[i].end_port_index = thread_data[i].start_port_index + ports_per_thread;
         thread_data[i].target_ip = target_ip;
@@ -125,4 +136,5 @@ void start_threaded_scan(t_context *ctx, char *target_ip)
     print_scan_results(ctx, target_ip); 
     free(threads);
     free(thread_data);
+    init_results(ctx);
 }
