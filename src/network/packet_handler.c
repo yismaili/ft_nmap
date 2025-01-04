@@ -57,8 +57,8 @@ void print_h(struct ethhdr *ethhdr,struct iphdr *iph,  struct tcphdr *tcph)
 void start_port_timing(t_result *result) 
 {
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    result->start_time = (double)ts.tv_sec + ((double)ts.tv_nsec / 1000000000.0);
+    clock_gettime(CLOCK_MONOTONIC, &ts);// retrieves the current time based on a specified clock
+    result->start_time = (double)ts.tv_sec + ((double)ts.tv_nsec / 1000000000.0);//converts the nanoseconds part into a fraction of a second.
 }
 
 void end_port_timing(t_result *result) 
@@ -78,35 +78,34 @@ const char* format_ipv4_address_to_string(const struct in_addr* addr)
 
 void packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet) 
 {
-    struct ethhdr *ethhdr = (struct ethhdr*)packet;
+    //  the packet includes the Ethernet frame, IP header, transport layer header, and the payload
+    struct ethhdr *ethhdr = (struct ethhdr*)packet; //ethernet header is parsed first to get to the IP header
     t_context *ctx = (t_context *)user;
-    struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
+    struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr)); //extract the IP header from a raw Ethernet packet
     
     if (iph->protocol == IPPROTO_UDP) 
     {
-        int ip_header_len = iph->ihl * 4;
+        int ip_header_len = iph->ihl * 4; // bit to bytes
         struct udphdr *udph = (struct udphdr*)((u_char*)iph + ip_header_len);
         
         if (iph->saddr == ctx->dest_ip.s_addr)
         {
-            uint16_t port = ntohs(udph->source);
+            uint16_t port = ntohs(udph->source); //network byte order to host byte order
             int result_idx = -1;
             
-            // Find matching port in our configuration
             for (int i = 0; i < ctx->config->port_count; i++) {
                 if (ctx->config->ports[i] == port) {
                     result_idx = i;
                     break;
                 }
             }
-            
+            if (result_idx == -1)
+                return;
             if (result_idx != -1) 
             {
-                // If we receive a UDP response, the port is likely open
                 ctx->results[result_idx].state = OPEN;
                 end_port_timing(&ctx->results[result_idx]);
                 
-                // Try to get service name
                 struct servent *service = getservbyport(htons(port), "udp");
                 if (service) {
                     strncpy(ctx->results[result_idx].service_name, service->s_name, sizeof(ctx->results[result_idx].service_name) - 1);
@@ -193,11 +192,11 @@ void *start_packet_sniffer(void* ptr)
 
     pthread_mutex_lock(ctx->mutex_lock);
     char *interface = retrieve_network_interface(ctx->source_ip);
-    ctx->handle = pcap_open_live(interface, BUFSIZ, 1, 1000, errbuf);
-    // printf("---%s---\n",interface);
+    ctx->handle = pcap_open_live(interface, BUFSIZ, 1, 1000, errbuf); //Opens a live packet capture session
+    // 1 Promiscuous Mode / 1000 Timeout
     if (ctx->handle == NULL) 
     {
-        fprintf(stderr, "Couldn't open device %s\n", errbuf);
+        fprintf(stderr, "Couldn't open device\n");
         pthread_mutex_unlock(ctx->mutex_lock);
         return NULL;
     }
@@ -210,17 +209,17 @@ void *start_packet_sniffer(void* ptr)
         return NULL;
     }
 
-    snprintf(filter_exp, sizeof(filter_exp), "(tcp or udp) and src host %s", inet_ntoa(ctx->dest_ip));
-    if (pcap_compile(ctx->handle, &fp_bpf, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) 
+    snprintf(filter_exp, sizeof(filter_exp), "(tcp or udp) and src host %s", inet_ntoa(ctx->dest_ip)); //Create the BPF Filter Expression
+    if (pcap_compile(ctx->handle, &fp_bpf, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1) //Compiles the human-readable filter expression
     {
-        fprintf(stderr, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(ctx->handle));
+        fprintf(stderr, "Couldn't parse filter\n");
         pcap_close(ctx->handle);
         pthread_mutex_unlock(ctx->mutex_lock);
         return NULL;
     }
-    if (pcap_setfilter(ctx->handle, &fp_bpf) == -1) 
+    if (pcap_setfilter(ctx->handle, &fp_bpf) == -1) //applies compiled Berkeley Packet Filter
     {
-        fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(ctx->handle));
+        fprintf(stderr, "Couldn't install filter\n");
         pcap_freecode(&fp_bpf);
         pcap_close(ctx->handle);
         pthread_mutex_unlock(ctx->mutex_lock);
@@ -233,7 +232,7 @@ void *start_packet_sniffer(void* ptr)
     FD_ZERO(&read_fds);
     FD_SET(fd, &read_fds);
 
-    int ready = select(fd + 1, &read_fds, NULL, NULL, &timeout);
+    int ready = select(fd + 1, &read_fds, NULL, NULL, &timeout); //Wait for Packet Capture
     if (ready == -1) {
         fprintf(stderr, "Select error: %s\n", strerror(errno));
     } else if (ready == 0) {

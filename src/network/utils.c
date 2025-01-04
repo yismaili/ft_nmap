@@ -40,8 +40,20 @@ void scan_port(t_context *ctx, char *ip_addr)
         execute_network_scan(ctx, ip_addr, XMAS_SCAN);
     if (ctx->config->scan_types.udp)
         execute_network_scan(ctx, ip_addr, UDP_SCAN);
-    print_scan_results(ctx, ip_addr);    
+    print_scan_results(ctx, ip_addr);
+    init_results(ctx);
 }
+
+void init_results(t_context *ctx)
+ {
+  for (int i = 0; i < ctx->config->port_count; i++) 
+    {
+        ctx->results[i].port = ctx->config->ports[i];
+        ctx->results[i].state = FILTERED;
+        ctx->results[i].service_name[0] = '\0';
+		ctx->results[i].service_version[0] = '\0';
+    }
+ }
 
 void cleanup_scanner(t_context *ctx) 
 {
@@ -132,9 +144,9 @@ void print_scan_results(t_context *ctx, const char* target_ip)
     printf("- Open ports: %d\n", responded_ports);
     printf("- Closed ports: %d\n", ctx->config->port_count - responded_ports);
 
-    if (open_ports_found) {
-        ctx->total_open_host++;
-    }
+    // if (open_ports_found) {
+    //     ctx->total_open_host++;
+    // }
 
     printf("=================================================================\n\n");
 }

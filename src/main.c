@@ -61,13 +61,9 @@ int main(int argc, char **argv)
 {
     t_context context;
     t_scan_config config;
-    int total_open_host = 0;
-    struct timespec start_time, finish_time;
-    clock_gettime(CLOCK_MONOTONIC, &start_time);
 
     memset(&config, 0, sizeof(config));
     init_config(&config);
-    context.total_open_host = 0;
     
     context.mutex_lock = malloc(sizeof(pthread_mutex_t));
     if (pthread_mutex_init(context.mutex_lock, NULL) != 0) {
@@ -79,24 +75,19 @@ int main(int argc, char **argv)
         printf("Usage: %s --ip <target_ip> [--ports <start-end>] [--speedup <threads>]\n", argv[0]);
         exit(2);
     }
-    // debug_config(config);
     context.config = &config;
   	setup_logging(&config);
+
     context.results = calloc(config.port_count, sizeof(t_result));
     if (!context.results) {
         fprintf(stderr, "Failed to allocate memory for results\n");
         exit(2);
     }
   
-    for (int i = 0; i < config.port_count; i++) 
-    {
-        context.results[i].port = config.ports[i];
-        context.results[i].state = FILTERED;
-        context.results[i].service_name[0] = '\0';
-				context.results[i].service_version[0] = '\0';
-    }
+    init_results(&context);
 
     retrieve_source_ip_address(&context);
+    
     if (init_row_socket(&context) < 0) {
         fprintf(stderr, "Failed to initialize scanner\n");
         exit(2);
